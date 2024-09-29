@@ -217,7 +217,7 @@ ENV PLOG="1.1.10"
 
 RUN wget https://github.com/SergiusTheBest/plog/archive/refs/tags/$PLOG.tar.gz -O /tmp/plog-$PLOG.tar.gz \
     && tar -xzf /tmp/plog-$PLOG.tar.gz -C /tmp/ \
-    && mv /tmp/plog-$PLOG /usr/local/include/plog \
+    && mv /tmp/plog-$PLOG/include/plog/ /usr/local/include/plog \
     && rm /tmp/plog-$PLOG.tar.gz
 
 # Copy Python script
