@@ -203,12 +203,22 @@ RUN wget https://download.qt.io/official_releases/qtcreator/13.0/$QTCREATOR_VERS
     cmake --install . --prefix $QTCREATOR && \
     rm -rf /tmp/qtcreator_build /tmp/qt-creator-opensource-src-$QTCREATOR_VERSION /tmp/qt-creator-opensource-src-$QTCREATOR_VERSION.tar.xz
 
-# Set Qt Creator environment variables
+# Set up important lib, bin, environment variables
 ENV PATH="$QTCREATOR/bin:$QT_DIR/gcc_64/bin:$LLVM_INSTALL_DIR/bin:$PATH"
 ENV QT_QPA_PLATFORM_PLUGIN_PATH="$QT_DIR/gcc_64/plugins/platforms"
 ENV LD_LIBRARY_PATH="$QTCREATOR/lib:$QT_DIR/gcc_64/lib:$QT_DIR/lib:$LLVM_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
 ENV PKG_CONFIG_PATH="$QT_DIR/gcc_64/lib/pkgconfig:$PKG_CONFIG_PATH"
 ENV CMAKE_PREFIX_PATH="$QT_DIR/lib/cmake:$LLVM_INSTALL_DIR"
+
+# Support libs
+
+# Download the plog library version 1.1.10 from GitHub
+ENV PLOG="1.1.10"
+
+RUN wget https://github.com/SergiusTheBest/plog/archive/refs/tags/$PLOG.tar.gz -O /tmp/plog-$PLOG.tar.gz \
+    && tar -xzf /tmp/plog-$PLOG.tar.gz -C /tmp/ \
+    && mv /tmp/plog-$PLOG /usr/local/include/plog \
+    && rm /tmp/plog-$PLOG.tar.gz
 
 # Copy Python script
 RUN mkdir -p /app
