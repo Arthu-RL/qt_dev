@@ -145,7 +145,7 @@ RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86
     dpkg -i cuda-repo-ubuntu2004-12-6-local_$CUDA_VERSION-560.35.03-1_amd64.deb && \
     cp /var/cuda-repo-ubuntu2004-12-6-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
     apt-get update && apt-get -y install cuda-toolkit-12-6 cuda-drivers && \
-    rm /etc/apt/sources.list.d/cuda-ubuntu2004-12-6-local.list && \
+    rm cuda-repo-ubuntu2004-12-6-local_$CUDA_VERSION-560.35.03-1_amd64.deb /etc/apt/sources.list.d/cuda-ubuntu2004-12-6-local.list && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /var/cuda-repo-ubuntu2004-12-6-local
 
 
