@@ -25,7 +25,7 @@ def run(project_path: str, image: str, container_name: str) -> None:
             -e DISPLAY=$DISPLAY \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
             -v {project_path}:/workspace \
-            -v {project_path}:/root/.config/QtProject \
+            -v {project_path}/qtcreator_config:/root/.config/QtProject \
             -w /workspace \
             {image}
     """
