@@ -42,13 +42,19 @@ if __name__ == '__main__':
 
     parser.add_argument('--run', dest='run', action='store_true', help='Run container instead of building', required=False)
     parser.add_argument('-p', '--project_path', dest='project_path', type=str, help='Path to the project', default='$HOME/dev')
-    parser.add_argument('-t', '--image_tag', dest='image_tag', type=str, help='Tag of the dev image', default='')
+    parser.add_argument('-t', '--image_repo', dest='image_repo', type=str, help='Tag of the dev image', default='arthurrl')
     parser.add_argument('-i', '--image_name', dest='image_name', type=str, help='Name of the dev image', default='vulkan_dev')
-    parser.add_argument('-c', '--container_name', dest='container_name', type=str, help='Name of the dev container', default='vulkan_dev')
+    parser.add_argument('-t', '--image_tag', dest='image_tag', type=str, help='Tag of the dev image', default='latest')
+    parser.add_argument('-c', '--container_name', dest='container_name', type=str, help='Name of the dev container', default='vulkan-dev')
 
     args: argparse.Namespace = parser.parse_args()
 
-    image: str = f"{args.image_tag}/{args.image_name}"
+    if len(args.image_name) > 0:
+        log.error(f"image_name parameter required!")
+        exit(1)
+    
+    image: str = f"{args.image_repo}/{args.image_name}:{args.image_tag}"
+    image = image.removeprefix('/')
 
     if args.run:
         run(project_path=args.project_path, image=image, container_name=args.container_name)

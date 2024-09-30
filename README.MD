@@ -16,7 +16,7 @@ The Docker image builds the following technologies from source:
 To build the Docker image with the desired configurations, run the following command:
 
 ```bash
-python build_run.py --image_tag 'custom_tag' --image_name 'vulkan_dev'
+python build_run.py
 ```
 
 Replace `custom_tag` with your preferred tag name for the image.
@@ -26,7 +26,7 @@ Replace `custom_tag` with your preferred tag name for the image.
 To run the Docker container with the built image, use the following command:
 
 ```bash
-python build_run.py --run --container_name 'vulkan_dev'
+python build_run.py --run
 ```
 
 Make sure to replace `vulkan_dev` with your desired container name.
