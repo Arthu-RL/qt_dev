@@ -1,6 +1,7 @@
 import argparse
 import subprocess as sp
 import logging as log
+from os import path, makedirs
 
 log.basicConfig(level=log.INFO, format='%(levelname)s: %(message)s')
 
@@ -16,7 +17,7 @@ def build(image: str) -> None:
         log.error(f"Build failed with error:\n{e.stderr}")
         exit(1)
 
-def run(project_path: str, image: str, container_name: str) -> None:
+def run(project_path: str, image: str, container_name: str, qtcreator_config: str) -> None:
     run_command: str = f"""
         docker rm -f {container_name} && \
         docker run --gpus all -d --name {container_name} \
@@ -24,6 +25,7 @@ def run(project_path: str, image: str, container_name: str) -> None:
             -e DISPLAY=$DISPLAY \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
             -v {project_path}:/workspace \
+            -v {qtcreator_config}:/root/.config/QtProject \
             -w /workspace \
             {image}
     """
@@ -42,14 +44,18 @@ if __name__ == '__main__':
 
     parser.add_argument('--run', dest='run', action='store_true', help='Run container instead of building', required=False)
     parser.add_argument('-p', '--project_path', dest='project_path', type=str, help='Path to the project', default='$HOME/dev')
-    parser.add_argument('-t', '--image_repo', dest='image_repo', type=str, help='Tag of the dev image', default='arthurrl')
-    parser.add_argument('-i', '--image_name', dest='image_name', type=str, help='Name of the dev image', default='vulkan_dev')
-    parser.add_argument('-t', '--image_tag', dest='image_tag', type=str, help='Tag of the dev image', default='latest')
+    parser.add_argument('-ir', '--image_repo', dest='image_repo', type=str, help='Tag of the dev image', default='arthurrl')
+    parser.add_argument('-in', '--image_name', dest='image_name', type=str, help='Name of the dev image', default='vulkan_dev')
+    parser.add_argument('-it', '--image_tag', dest='image_tag', type=str, help='Tag of the dev image', default='latest')
     parser.add_argument('-c', '--container_name', dest='container_name', type=str, help='Name of the dev container', default='vulkan-dev')
+    parser.add_argument('-cfg', '--qtcreator_config', dest='qtcreator_config', type=str, help='Path qtcreator config', default='$HOME/dev')
 
     args: argparse.Namespace = parser.parse_args()
 
-    if len(args.image_name) > 0:
+    if not path.isdir(args.project_path):
+        makedirs(args.project_path, exist_ok=True)
+
+    if not (len(args.image_name) > 0):
         log.error(f"image_name parameter required!")
         exit(1)
     
@@ -57,6 +63,6 @@ if __name__ == '__main__':
     image = image.removeprefix('/')
 
     if args.run:
-        run(project_path=args.project_path, image=image, container_name=args.container_name)
+        run(project_path=args.project_path, image=image, container_name=args.container_name, qtcreator_config=args.qtcreator_config)
     else:
         build(image=image)
