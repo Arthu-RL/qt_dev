@@ -220,6 +220,14 @@ RUN wget https://github.com/SergiusTheBest/plog/archive/refs/tags/$PLOG.tar.gz -
     && mv /tmp/plog-$PLOG/include/plog/ /usr/local/include/plog \
     && rm /tmp/plog-$PLOG.tar.gz && rm -rf /tmp/plog-$PLOG
 
+# C++ Mathematics library for graphics software based on the OpenGL Shading Language (GLSL) specifications
+ENV GLM="1.0.1"
+
+RUN wget https://github.com/g-truc/glm/archive/refs/tags/$GLM.tar.gz -O /tmp/glm-$GLM.tar.gz \
+    && tar -xzf /tmp/glm-$GLM.tar.gz -C /tmp/ \
+    && mv /tmp/glm-$GLM/glm /usr/local/include/glm \
+    && rm /tmp/glm-$GLM.tar.gz && rm -rf /tmp/glm-$GLM
+
 # Copy Python script
 RUN mkdir -p /app
 COPY ./monitor.py /app/monitor.py
