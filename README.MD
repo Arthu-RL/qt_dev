@@ -11,6 +11,14 @@ The Docker image builds the following technologies from source:
 - **Vulkan**: A low-overhead, cross-platform 3D graphics and compute API.
 - **CUDA**: A parallel computing platform and application programming interface model created by NVIDIA.
 
+## Get Started
+
+Pull the image and run the container like in the `Run the Docker Container` section
+
+```bash
+docker pull arthurrl/vulkan_dev:latest
+```
+
 ## Build the Docker Image
 
 To build the Docker image with the desired configurations, run the following command:
