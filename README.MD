@@ -13,7 +13,7 @@ The Docker image builds the following technologies from source:
 
 ## Get Started
 
-Pull the image and run the container like in the `Run the Docker Container` section
+Pull the image and run the container like in the `Run the Docker Container` section.
 
 ```bash
 docker pull arthurrl/vulkan_dev:latest
