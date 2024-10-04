@@ -16,13 +16,14 @@ def log_system_usage():
 if __name__ == "__main__":
     print("Welcome to QtCreator dev container for VULKAN!")
     print()
+    print(f"CMAKE_VERSION: {os.getenv('CMAKE_VERSION')}")
+    print(f"CUDA_VERSION: {os.getenv('CUDA_VERSION')}")
     print(f"QTCREATOR_VERSION: {os.getenv('QTCREATOR_VERSION')}")
     print(f"QT: {os.getenv('QT')}")
     print(f"VULKAN_SDK_VERSION: {os.getenv('VULKAN_SDK_VERSION')}")
-    print(f"CUDA_VERSION: {os.getenv('CUDA_VERSION')}")
-    print(f"CMAKE_VERSION: {os.getenv('CMAKE_VERSION')}")
-    print(f"PLOG: {os.getenv('PLOG')}")
-    print(f"GLM: {os.getenv('GLM')}")
+    print(f"GLFW_VERSION: {os.getenv('GLFW_VERSION')}")
+    print(f"PLOG_VERSION: {os.getenv('PLOG_VERSION')}")
+    print(f"GLM_VERSION: {os.getenv('GLM_VERSION')}")
     print()
     
     result = sp.run("nvidia-smi", shell=True, capture_output=True, text=True)
