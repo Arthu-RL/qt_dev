@@ -13,7 +13,7 @@ LABEL version="1.0.0"
 LABEL description="This image builds Qt 6.7.2 from source with support for X11, Vulkan, CUDA, and Qt Creator."
 LABEL qt_version="6.7.2"
 LABEL vulkan_sdk_version="1.3.290.0"
-LABEL cuda_version="12.6.1"
+LABEL cuda_version="12.6.2"
 LABEL CMAKE="3.30.3"
 LABEL python_script="monitor.py"
 LABEL base_image="ubuntu:20.04"
@@ -22,6 +22,10 @@ LABEL base_image="ubuntu:20.04"
 ENV DEBIAN_FRONTEND=noninteractive
 
 ENV TZ=America/Sao_Paulo
+RUN apt-get update && \
+    apt-get install -y tzdata && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
+    rm -rf /var/lib/apt/lists/*
 
 
 #######################################
@@ -48,6 +52,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gdb \
     pkg-config \
     gnupg \
+    locales \
     lsb-release \
     ca-certificates \
     software-properties-common \
@@ -85,7 +90,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxkbcommon-x11-0 \
     libfontconfig1-dev \
     libfreetype6-dev \
-    locales \
     libclang-dev \
     ninja-build \
     libglvnd-dev \
@@ -158,7 +162,7 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmak
 #  CUDA drivers and toolkit installation
 ############################################
 
-ENV CUDA_VERSION="12.6.1"
+ENV CUDA_VERSION="12.6.2"
 RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin && \
     mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
     wget https://developer.download.nvidia.com/compute/cuda/$CUDA_VERSION/local_installers/cuda-repo-ubuntu2004-12-6-local_$CUDA_VERSION-560.35.03-1_amd64.deb && \
