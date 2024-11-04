@@ -18,12 +18,15 @@ def build(image: str) -> None:
         exit(1)
 
 def run(project_path: str, image: str, container_name: str) -> None:
-    run_command: str = f"""
+    run_command = f"""
         docker rm -f {container_name} && \
-        docker run --gpus all -d --name {container_name} \
-            --device /dev/dri:/dev/dri \
+        docker run --gpus all --privileged -d --name {container_name} \
+            -e NVIDIA_VISIBLE_DEVICES=all \
+            -e NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics \
             -e DISPLAY=$DISPLAY \
+            -e XDG_RUNTIME_DIR=/tmp/runtime-root \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
+            -v /dev/dri:/dev/dri \
             -v {project_path}:/workspace \
             -v {project_path}/qtcreator_config:/root/.config/QtProject \
             -w /workspace \
