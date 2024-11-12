@@ -63,7 +63,7 @@ parser.add_argument('--run', dest='run', action='store_true', help='Run containe
 parser.add_argument('--push', dest='push', action='store_true', help='Push image to dockerhub after building', required=False)
 parser.add_argument('-p', '--project_path', dest='project_path', type=str, help='Path to the project', default=f"{os.getenv('HOME')}/dev")
 parser.add_argument('-ir', '--image_repo', dest='image_repo', type=str, help='Tag of the dev image', default='arthurrl')
-parser.add_argument('-in', '--image_name', dest='image_name', type=str, help='Name of the dev image', default='vulkan_dev')
+parser.add_argument('-in', '--image_name', dest='image_name', type=str, help='Name of the dev image', default='vulkan-dev')
 parser.add_argument('-it', '--image_tag', dest='image_tag', type=str, help='Tag of the dev image', default='latest')
 parser.add_argument('-c', '--container_name', dest='container_name', type=str, help='Name of the dev container', default='vulkan-dev')
 
