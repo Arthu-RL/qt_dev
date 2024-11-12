@@ -1,15 +1,6 @@
 # Vulkan Development Environment
 
-This repository provides a Docker image for building and developing applications using **Qt**, **Qt Creator**, **Vulkan**, and **CUDA** with support for **X11**.
-
-## Overview
-
-The Docker image builds the following technologies from source:
-
-- **Qt**: A cross-platform application framework.
-- **Qt Creator**: An integrated development environment (IDE) for Qt applications.
-- **Vulkan**: A low-overhead, cross-platform 3D graphics and compute API.
-- **CUDA**: A parallel computing platform and application programming interface model created by NVIDIA.
+This repository provides a Docker image for building and developing applications using **Qt**, **Qt Creator**, **Vulkan**, **GLFW**, **Dear ImGui**, and **CUDA** with support for **X11**.
 
 ## Get Started
 
@@ -49,6 +40,7 @@ This image integrates several key technologies:
 - **[Vulkan SDK](https://vulkan.lunarg.com/sdk/)**: A software development kit for Vulkan applications.
 - **[LLVM](https://apt.llvm.org/)**: A collection of modular and reusable compiler and toolchain technologies.
 - **[Qt Creator](https://download.qt.io/official_releases/qtcreator/)**: A powerful IDE for developing Qt applications.
+- **[Dear ImGui](https://github.com/ocornut/imgui)**: A powerful bloat-free graphical user interface library for C++.
 
 ## Contributing
 

@@ -10,11 +10,12 @@ FROM ubuntu:20.04
 
 LABEL maintainer="ArthurRL"
 LABEL version="1.0.0"
-LABEL description="This image builds Qt 6.7.2 from source with support for X11, Vulkan, CUDA, and Qt Creator."
+LABEL description="This image builds Qt 6.7.2 from source with support for X11, Dear ImGui, Vulkan, CUDA, and Qt Creator."
 LABEL qt_version="6.7.2"
 LABEL vulkan_sdk_version="1.3.290.0"
 LABEL cuda_version="12.6.2"
 LABEL CMAKE="3.30.3"
+LABEL dear_imgui_version="1.91.5"
 LABEL python_script="monitor.py"
 LABEL base_image="ubuntu:20.04"
 
@@ -257,6 +258,12 @@ RUN wget https://github.com/glfw/glfw/archive/refs/tags/$GLFW_VERSION.tar.gz -O 
     make && make install && \
     rm /tmp/glfw-$GLFW_VERSION.tar.gz && rm -rf /tmp/glfw-$GLFW_VERSION
 
+ENV DEARIMGUI_VERSION="1.91.5"
+RUN wget https://github.com/ocornut/imgui/archive/refs/tags/v$DEARIMGUI_VERSION.tar.gz -O /tmp/imgui-$DEARIMGUI_VERSION.tar.gz && \
+    tar -xzf /tmp/imgui-$DEARIMGUI_VERSION.tar.gz -C /tmp/ && \
+    mv /tmp/imgui-$DEARIMGUI_VERSION $LIBRARY_PATH/include/imgui && \
+    rm /tmp/imgui-$DEARIMGUI_VERSION.tar.gz
+
 # Download and install PLOG (header-only library)
 ENV PLOG_VERSION="1.1.10"
 RUN wget https://github.com/SergiusTheBest/plog/archive/refs/tags/$PLOG_VERSION.tar.gz -O /tmp/plog-$PLOG_VERSION.tar.gz && \
@@ -280,8 +287,8 @@ ENV VULKAN_SDK="$LIBRARY_PATH/VulkanSDK/$VULKAN_SDK_VERSION/x86_64"
 ENV VK_ICD_FILENAMES="$VULKAN_SDK/etc/vulkan/icd.d:/usr/share/vulkan/icd.d"
 ENV PATH="$LIBRARY_PATH:$LIBRARY_PATH/include:$VULKAN_SDK/bin:$QTCREATOR/bin:$QT_DIR/gcc_64/bin:$LLVM_INSTALL_DIR/bin:$PATH"
 ENV QT_QPA_PLATFORM_PLUGIN_PATH="$QT_DIR/gcc_64/plugins/platforms"
-ENV LD_LIBRARY_PATH="$QTCREATOR/lib:$QT_DIR/gcc_64/lib:$QT_DIR/lib:$VULKAN_SDK/lib:$LLVM_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
-ENV PKG_CONFIG_PATH="$QT_DIR/gcc_64/lib/pkgconfig:$PKG_CONFIG_PATH"
+ENV LD_LIBRARY_PATH="$QTCREATOR/lib:$QT_DIR/gcc_64/lib:$QT_DIR/lib:$VULKAN_SDK/lib:$LLVM_INSTALL_DIR/lib"
+ENV PKG_CONFIG_PATH="$QT_DIR/gcc_64/lib/pkgconfig"
 
 # Copy Python script
 RUN mkdir -p /app
