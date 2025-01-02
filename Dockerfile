@@ -14,7 +14,8 @@ LABEL description="This image builds Qt 6.7.2 from source with support for X11, 
 LABEL qt_version="6.7.2"
 LABEL vulkan_sdk_version="1.3.290.0"
 LABEL cuda_version="12.6.2"
-LABEL CMAKE="3.30.3"
+LABEL cmake="3.30.3"
+LABEL nlohmann_json="3.11.3"
 LABEL dear_imgui_version="1.91.5"
 LABEL python_script="monitor.py"
 LABEL base_image="ubuntu:20.04"
@@ -244,7 +245,7 @@ RUN wget https://download.qt.io/official_releases/qtcreator/13.0/$QTCREATOR_VERS
 ENV LIBRARY_PATH="/usr/local"
 
 # Set up Vulkan SDK
-ENV VULKAN_SDK_VERSION="1.3.290.0"
+ENV VULKAN_SDK_VERSION="1.3.296.0"
 RUN mkdir -p $LIBRARY_PATH/VulkanSDK && \
     wget -qO - https://sdk.lunarg.com/sdk/download/$VULKAN_SDK_VERSION/linux/vulkansdk-linux-x86_64-$VULKAN_SDK_VERSION.tar.xz | \
     tar -xJf - -C $LIBRARY_PATH/VulkanSDK
@@ -258,26 +259,33 @@ RUN wget https://github.com/glfw/glfw/archive/refs/tags/$GLFW_VERSION.tar.gz -O 
     make && make install && \
     rm /tmp/glfw-$GLFW_VERSION.tar.gz && rm -rf /tmp/glfw-$GLFW_VERSION
 
-ENV DEARIMGUI_VERSION="1.91.5"
+ENV DEARIMGUI_VERSION="1.91.6"
 RUN wget https://github.com/ocornut/imgui/archive/refs/tags/v$DEARIMGUI_VERSION.tar.gz -O /tmp/imgui-$DEARIMGUI_VERSION.tar.gz && \
     tar -xzf /tmp/imgui-$DEARIMGUI_VERSION.tar.gz -C /tmp/ && \
-    mv /tmp/imgui-$DEARIMGUI_VERSION $LIBRARY_PATH/include/imgui && \
-    rm /tmp/imgui-$DEARIMGUI_VERSION.tar.gz
+    mkdir -p $LIBRARY_PATH/include/imgui && \
+    mv /tmp/imgui-$DEARIMGUI_VERSION/* $LIBRARY_PATH/include/imgui/ && \
+    rm /tmp/imgui-$DEARIMGUI_VERSION.tar.gz && rm -rf /tmp/imgui-$DEARIMGUI_VERSION
 
 # Download and install PLOG (header-only library)
 ENV PLOG_VERSION="1.1.10"
 RUN wget https://github.com/SergiusTheBest/plog/archive/refs/tags/$PLOG_VERSION.tar.gz -O /tmp/plog-$PLOG_VERSION.tar.gz && \
     tar -xzf /tmp/plog-$PLOG_VERSION.tar.gz -C /tmp/ && \
-    mv /tmp/plog-$PLOG_VERSION/include/plog/ $LIBRARY_PATH/include/plog && \
+    mv /tmp/plog-$PLOG_VERSION/include/* $LIBRARY_PATH/include/ && \
     rm /tmp/plog-$PLOG_VERSION.tar.gz && rm -rf /tmp/plog-$PLOG_VERSION
 
 # Download and install GLM (header-only library)
 ENV GLM_VERSION="1.0.1"
 RUN wget https://github.com/g-truc/glm/archive/refs/tags/$GLM_VERSION.tar.gz -O /tmp/glm-$GLM_VERSION.tar.gz && \
     tar -xzf /tmp/glm-$GLM_VERSION.tar.gz -C /tmp/ && \
-    mv /tmp/glm-$GLM_VERSION/glm/ $LIBRARY_PATH/include/glm && \
+    mv /tmp/glm-$GLM_VERSION/glm $LIBRARY_PATH/include && \
     rm /tmp/glm-$GLM_VERSION.tar.gz && rm -rf /tmp/glm-$GLM_VERSION
 
+# Download NLOHMANN JSON lib (header-only library)
+ENV NLOHMANN_JSON="3.11.3"
+RUN wget https://github.com/nlohmann/json/releases/download/v$NLOHMANN_JSON/json.tar.xz -O /tmp/json.tar.xz && \
+    tar -xf /tmp/json.tar.xz -C /tmp/ && \
+    mv /tmp/json/include/* $LIBRARY_PATH/include/ && \
+    rm /tmp/json.tar.xz && rm -rf /tmp/json
 
 ###################################
 # Important environment variables

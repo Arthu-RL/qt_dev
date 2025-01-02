@@ -60,6 +60,7 @@ def push(image: str) -> None:
 parser: argparse.ArgumentParser = argparse.ArgumentParser(description="Build Vulkan dev image")
 
 parser.add_argument('--run', dest='run', action='store_true', help='Run container instead of building', required=False)
+parser.add_argument('--build', dest='build', action='store_true', help='Build docker image', required=False)
 parser.add_argument('--push', dest='push', action='store_true', help='Push image to dockerhub after building', required=False)
 parser.add_argument('-p', '--project_path', dest='project_path', type=str, help='Path to the project', default=f"{os.getenv('HOME')}/dev")
 parser.add_argument('-ir', '--image_repo', dest='image_repo', type=str, help='Tag of the dev image', default='arthurrl')
@@ -79,10 +80,11 @@ if not (len(args.image_name) > 0):
 image: str = f"{args.image_repo}/{args.image_name}:{args.image_tag}"
 image = image.removeprefix('/')
 
+if args.build:
+    build(image=image)
+
 if args.run:
     run(project_path=args.project_path, image=image, container_name=args.container_name)
-else:
-    build(image=image)
 
 if args.push:
     push(image=image)
