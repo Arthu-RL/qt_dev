@@ -15,7 +15,7 @@ docker pull arthurrl/vulkan_dev:latest
 To build the Docker image with the desired configurations, run the following command:
 
 ```bash
-python build_run.py
+python build_run.py --build --image_tag="tag"
 ```
 
 Replace `custom_tag` with your preferred tag name for the image.
@@ -25,7 +25,7 @@ Replace `custom_tag` with your preferred tag name for the image.
 To run the Docker container with the built image, use the following command:
 
 ```bash
-python build_run.py --run
+python build_run.py --run --image_tag '2.0'
 ```
 
 Make sure to replace `vulkan_dev` with your desired container name.

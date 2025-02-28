@@ -3,10 +3,29 @@ import subprocess as sp
 import logging as log
 import os
 
+from typing import Dict
+
 log.basicConfig(level=log.INFO, format='%(levelname)s: %(message)s')
 
-def build(image: str) -> None:
-    build_command: str = f"docker build -t {image} -f Dockerfile ."
+
+def parse_build_args(build_args: str) -> Dict[str, str]:
+    build_args_dict: Dict[str, str] = {}
+    args_list = build_args.split()
+
+    for arg in args_list:
+        key, value = arg.split('=')
+        build_args_dict.update({key: value})
+    
+    return build_args_dict
+
+def build(image: str, build_args: str) -> None:
+    build_args_dict = parse_build_args(build_args)
+    build_args_cmd = ""
+    for key, value in build_args_dict.items():
+        build_args_cmd += f"--build-arg {key.upper()}=\"{value}\" "
+    build_args_cmd
+
+    build_command: str = f"docker build {build_args_cmd} -t {image} -f Dockerfile .".strip()
 
     log.info(f"Running build command: {build_command}")
 
@@ -67,6 +86,7 @@ parser.add_argument('-ir', '--image_repo', dest='image_repo', type=str, help='Ta
 parser.add_argument('-in', '--image_name', dest='image_name', type=str, help='Name of the dev image', default='vulkan-dev')
 parser.add_argument('-it', '--image_tag', dest='image_tag', type=str, help='Tag of the dev image', default='latest')
 parser.add_argument('-c', '--container_name', dest='container_name', type=str, help='Name of the dev container', default='vulkan-dev')
+parser.add_argument('-ba', '--build_args', dest='build_args', type=str, help="Docker Build args container passed in StringList formatter sep=' '", default=None)
 
 args: argparse.Namespace = parser.parse_args()
 
@@ -75,13 +95,18 @@ if not os.path.isdir(args.project_path):
 
 if not (len(args.image_name) > 0):
     log.error(f"image_name parameter required!")
+    parser.print_help()
     exit(1)
 
 image: str = f"{args.image_repo}/{args.image_name}:{args.image_tag}"
 image = image.removeprefix('/')
 
 if args.build:
-    build(image=image)
+    if not args.build_args:
+        log.error(f"build_args parameter required!")
+        parser.print_help()
+        exit(1)
+    build(image=image, build_args=args.build_args)
 
 if args.run:
     run(project_path=args.project_path, image=image, container_name=args.container_name)
