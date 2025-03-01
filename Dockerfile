@@ -391,14 +391,23 @@ RUN dpkg -i cuda-repo-ubuntu2004-12-8-local_${CUDA_VERSION}-570.86.10-1_amd64.de
 
 
 ###################################
+# Final CleanUp
+###################################
+RUN apt-get autoremove -y
+
+
+###################################
 # Important environment variables
 ###################################
-ENV VULKAN_SDK="${LIBRARY_PATH}/VulkanSDK/${VULKAN_SDK_VERSION}/x86_64"
-ENV VK_ICD_FILENAMES="${VULKAN_SDK}/etc/vulkan/icd.d:/usr/share/vulkan/icd.d"
+ENV VULKAN_ROOT="${LIBRARY_PATH}/VulkanSDK/${VULKAN_SDK_VERSION}"
+RUN chmod +x ${VULKAN_ROOT}/setup-env.sh && \
+    echo "source ${VULKAN_ROOT}/setup-env.sh" >> ~/.bashrc
+
+# ENV VK_ICD_FILENAMES="${VULKAN_SDK}/etc/vulkan/icd.d:/usr/share/vulkan/icd.d"
 ENV PATH="${LIBRARY_PATH}/bin:${PATH}:${LIBRARY_PATH}:${LIBRARY_PATH}/include:${VULKAN_SDK}/bin:${QTCREATOR}/bin:${QT_DIR}/gcc_64/bin:${LLVM_INSTALL_DIR}/bin:${PATH}"
 ENV QT_QPA_PLATFORM_PLUGIN_PATH="${QT_DIR}/gcc_64/plugins/platforms"
-ENV LD_LIBRARY_PATH="${QTCREATOR}/lib:${QT_DIR}/gcc_64/lib:${QT_DIR}/lib:${VULKAN_SDK}/lib:${LLVM_INSTALL_DIR}/lib"
-ENV PKG_CONFIG_PATH="${QT_DIR}/gcc_64/lib/pkgconfig"
+ENV LD_LIBRARY_PATH="${QTCREATOR}/lib:${QT_DIR}/gcc_64/lib:${QT_DIR}/lib:${VULKAN_SDK}/lib:${LLVM_INSTALL_DIR}/lib:${LIBRARY_PATH}/gcc-${GCC_VERSION}/lib64:$LD_LIBRARY_PATH"
+ENV PKG_CONFIG_PATH="${QT_DIR}/gcc_64/lib/pkgconfig:PKG_CONFIG_PATH"
 
 # Copy Python script
 RUN mkdir -p /app
