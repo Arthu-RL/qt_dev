@@ -249,7 +249,7 @@ RUN cmake -S /tmp/glfw-${GLFW_VERSION} -B /tmp/glfw-${GLFW_VERSION}/build -DCMAK
     rm -rf /tmp/glfw-${GLFW_VERSION} /tmp/glfw-${GLFW_VERSION}.tar.gz
 
 # Download and install GLAD-generated files (OpenGL)
-RUN pip3 install --upgrade git+https://github.com/dav1dde/glad.git#egg=glad && \
+RUN pip3 install --upgrade "git+https://github.com/dav1dde/glad.git#egg=glad" && \
     python3 -m glad --api="gl:core=4.6" --out-path=/tmp/glad
 
 RUN mkdir -p ${LIBRARY_PATH}/include/glad && \
@@ -306,7 +306,7 @@ RUN mv /tmp/c3/lib/* ${LIBRARY_PATH}/lib && \
 
 # Build SQLITE lib from source
 ENV SQLITECPP_VERSION="3.3.2"
-RUN wget -q https://github.com/SRombauts/SQLiteCpp/archive/refs/tags/${SQLITECPP_VERSION}.tar.gz -O /tmp/SQLiteCpp-${SQLITECPP_VERSION}.tar.gz && \
+RUN wget -q "https://github.com/SRombauts/SQLiteCpp/archive/refs/tags/${SQLITECPP_VERSION}.tar.gz" -O /tmp/SQLiteCpp-${SQLITECPP_VERSION}.tar.gz && \
     tar -xzf /tmp/SQLiteCpp-${SQLITECPP_VERSION}.tar.gz -C /tmp/ && \
     rm -rf /tmp/SQLiteCpp-${SQLITECPP_VERSION}.tar.gz
 
