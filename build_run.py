@@ -3,7 +3,7 @@ import subprocess as sp
 import logging as log
 import os
 
-from typing import Dict
+from typing import Dict, Optional
 
 log.basicConfig(level=log.INFO, format='%(levelname)s: %(message)s')
 
@@ -18,14 +18,14 @@ def parse_build_args(build_args: str) -> Dict[str, str]:
     
     return build_args_dict
 
-def build(image: str, build_args: str) -> None:
-    build_args_dict = parse_build_args(build_args)
-    build_args_cmd = ""
-    for key, value in build_args_dict.items():
-        build_args_cmd += f"--build-arg {key.upper()}=\"{value}\" "
-    build_args_cmd
+def build(image: str, dockerfile: str, build_args: Optional[str]) -> None:
+    build_args_cmd: str = ""
+    if build_args:
+        build_args_dict = parse_build_args(build_args)
+        for key, value in build_args_dict.items():
+            build_args_cmd += f"--build-arg {key.upper()}=\"{value}\" "
 
-    build_command: str = f"docker build {build_args_cmd} -t {image} -f Dockerfile .".strip()
+    build_command: str = f"docker build {build_args_cmd} -t {image} -f {dockerfile} .".strip()
 
     log.info(f"Running build command: {build_command}")
 
@@ -50,7 +50,7 @@ def run(project_path: str, image: str, container_name: str) -> None:
             -v {project_path}/qtcreator_config:/root/.config/QtProject \
             -w /workspace \
             {image}
-    """
+    """.strip()
 
     log.info(f"Run command:\n{run_command}")
 
@@ -80,6 +80,7 @@ parser: argparse.ArgumentParser = argparse.ArgumentParser(description="Build Vul
 
 parser.add_argument('--run', dest='run', action='store_true', help='Run container instead of building', required=False)
 parser.add_argument('--build', dest='build', action='store_true', help='Build docker image', required=False)
+parser.add_argument('--base', dest='base', action='store_true', help='Build docker image Base/Derived', required=False)
 parser.add_argument('--push', dest='push', action='store_true', help='Push image to dockerhub after building', required=False)
 parser.add_argument('-p', '--project_path', dest='project_path', type=str, help='Path to the project', default=f"{os.getenv('HOME')}/dev")
 parser.add_argument('-ir', '--image_repo', dest='image_repo', type=str, help='Tag of the dev image', default='arthurrl')
@@ -102,11 +103,7 @@ image: str = f"{args.image_repo}/{args.image_name}:{args.image_tag}"
 image = image.removeprefix('/')
 
 if args.build:
-    if not args.build_args:
-        log.error(f"build_args parameter required!")
-        parser.print_help()
-        exit(1)
-    build(image=image, build_args=args.build_args)
+    build(image=image, dockerfile='Dockerfile.base' if args.base else 'Dockerfile', build_args=args.build_args)
 
 if args.run:
     run(project_path=args.project_path, image=image, container_name=args.container_name)
