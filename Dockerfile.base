@@ -15,7 +15,7 @@ FROM ubuntu:20.04
 
 LABEL maintainer="ArthurRL"
 LABEL version="base"
-LABEL description="This image builds Qt from source with support for X11, Dear ImGui, Vulkan, CUDA, and Qt Creator."
+LABEL description="This image builds Qt from source with support for X11, CUDA, and Qt Creator."
 LABEL base_image="ubuntu:20.04"
 
 # Set non-interactive mode for apt-get installs
