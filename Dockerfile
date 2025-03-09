@@ -32,6 +32,17 @@ RUN cmake -S /tmp/glfw-${GLFW_VERSION} -B /tmp/glfw-${GLFW_VERSION}/build -DCMAK
     rm -rf /tmp/glfw-${GLFW_VERSION} /tmp/glfw-${GLFW_VERSION}.tar.gz
 
 
+# Clone and install SDL2 from source
+RUN cd /tmp && \
+    git clone https://github.com/libsdl-org/SDL.git -b SDL2 && \
+    cmake -S /tmp/SDL -B /tmp/SDL/build -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
+    -DSDL_ALSA=ON \
+    -DSDL_OPENGL=ON \
+    -DSDL_VULKAN=ON && \
+    cmake --build /tmp/SDL/build --target install --parallel $(nproc) && \
+    rm -rf /tmp/SDL
+
+
 # Download and install GLAD-generated files (OpenGL)
 RUN pip3 install --upgrade "git+https://github.com/dav1dde/glad.git#egg=glad" && \
     python3 -m glad --api="gl:core=4.6" --out-path=/tmp/glad
