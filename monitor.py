@@ -35,4 +35,4 @@ if __name__ == "__main__":
 
     while True:
         log_system_usage()
-        time.sleep(120)
+        time.sleep(180)

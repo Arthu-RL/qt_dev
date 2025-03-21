@@ -126,10 +126,23 @@ RUN wget "https://github.com/raysan5/raylib/releases/download/${RAYLIB_VERSION}/
     rm -rf /tmp/raylib-${RAYLIB_VERSION}_linux_amd64.tar.gz
 
 RUN cp -r /tmp/raylib-${RAYLIB_VERSION}_linux_amd64/lib/* ${LIBRARY_PATH}/lib && \
-    mkdir -p ${LIBRARY_PATH}/include/raylib && \
-    cp -r /tmp/raylib-${RAYLIB_VERSION}_linux_amd64/include/* ${LIBRARY_PATH}/include/raylib && \
+    cp -r /tmp/raylib-${RAYLIB_VERSION}_linux_amd64/include/* ${LIBRARY_PATH}/include/ && \
     rm -rf /tmp/raylib-${RAYLIB_VERSION}_linux_amd64
+    
+RUN cd /tmp && \
+	git clone "https://github.com/libsdl-org/SDL_ttf.git" -b SDL2 && \
+	cmake -S /tmp/SDL_ttf -B /tmp/SDL_ttf/build -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
+	cmake --build /tmp/SDL_ttf/build --target install --parallel $(nproc) && \
+	rm -rf /tmp/SDL_ttf
 
+ENV INKLIB_VERSION="1.0.0"
+RUN wget "https://github.com/Arthu-RL/libink/releases/download/${INKLIB_VERSION}/ink-${INKLIB_VERSION}_linux_amd64.tar.gz" -O /tmp/ink-${INKLIB_VERSION}_linux_amd64.tar.gz && \
+    tar -xzf /tmp/ink-${INKLIB_VERSION}_linux_amd64.tar.gz -C /tmp/ && \
+    rm -rf /tmp/ink-${INKLIB_VERSION}_linux_amd64.tar.gz
+
+RUN cp -r /tmp/ink-${INKLIB_VERSION}_linux_amd64/lib/* ${LIBRARY_PATH}/lib && \
+    cp -r /tmp/ink-${INKLIB_VERSION}_linux_amd64/include/* ${LIBRARY_PATH}/include/ && \
+    rm -rf /tmp/ink-${INKLIB_VERSION}_linux_amd64
 
 ############################################
 # Important environment variables set up
