@@ -135,14 +135,13 @@ RUN cd /tmp && \
 	cmake --build /tmp/SDL_ttf/build --target install --parallel $(nproc) && \
 	rm -rf /tmp/SDL_ttf
 
-ENV INKLIB_VERSION="1.0.0"
-RUN wget "https://github.com/Arthu-RL/libink/releases/download/${INKLIB_VERSION}/ink-${INKLIB_VERSION}_linux_amd64.tar.gz" -O /tmp/ink-${INKLIB_VERSION}_linux_amd64.tar.gz && \
-    tar -xzf /tmp/ink-${INKLIB_VERSION}_linux_amd64.tar.gz -C /tmp/ && \
-    rm -rf /tmp/ink-${INKLIB_VERSION}_linux_amd64.tar.gz
-
-RUN cp -r /tmp/ink-${INKLIB_VERSION}_linux_amd64/lib/* ${LIBRARY_PATH}/lib && \
-    cp -r /tmp/ink-${INKLIB_VERSION}_linux_amd64/include/* ${LIBRARY_PATH}/include/ && \
-    rm -rf /tmp/ink-${INKLIB_VERSION}_linux_amd64
+RUN cd /tmp && \
+    git clone "https://github.com/Arthu-RL/libink.git" && \
+    cmake -S /tmp/libink -B /tmp/libink/build \ 
+        -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
+        -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build /tmp/libink/build --target install --parallel $(nproc) && \
+    rm -rf /tmp/libink
 
 ############################################
 # Important environment variables set up
