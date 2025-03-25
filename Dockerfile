@@ -136,6 +136,12 @@ RUN cd /tmp && \
 	rm -rf /tmp/SDL_ttf
 
 RUN cd /tmp && \
+	git clone "https://github.com/uxlfoundation/oneTBB.git" && \
+	cmake -S /tmp/oneTBB -B /tmp/oneTBB/build -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
+	cmake --build /tmp/oneTBB/build --target install --parallel $(nproc) && \
+	rm -rf /tmp/oneTBB
+
+RUN cd /tmp && \
     git clone "https://github.com/Arthu-RL/libink.git" && \
     cmake -S /tmp/libink -B /tmp/libink/build \ 
         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
