@@ -137,7 +137,7 @@ RUN cd /tmp && \
 
 RUN cd /tmp && \
 	git clone "https://github.com/uxlfoundation/oneTBB.git" && \
-	cmake -S /tmp/oneTBB -B /tmp/oneTBB/build -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
+	cmake -S /tmp/oneTBB -B /tmp/oneTBB/build -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=OFF && \
 	cmake --build /tmp/oneTBB/build --target install --parallel $(nproc) && \
 	rm -rf /tmp/oneTBB
 
