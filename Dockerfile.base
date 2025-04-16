@@ -15,7 +15,7 @@ FROM ubuntu:20.04
 
 LABEL maintainer="ArthurRL"
 LABEL version="base"
-LABEL description="This image builds Qt from source with support for X11, CUDA, and Qt Creator."
+LABEL description="This image builds Qt from source with support for GCC 14, X11, CUDA, CUDNN and Qt Creator."
 LABEL base_image="ubuntu:20.04"
 
 # Set non-interactive mode for apt-get installs
@@ -109,6 +109,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1-mesa-dev \
     libegl1-mesa-dev \
     libgles2-mesa-dev \
+    libgtk-3-dev \
     libsm6 \
     libice6 \
     libpci-dev \
@@ -132,7 +133,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     alsa-utils \
     pulseaudio \
     libvulkan1 vulkan-tools vulkan-utils mesa-vulkan-drivers \
-    # libvulkan-dev vulkan-validationlayers \
     libglvnd0 \
     libglu1-mesa-dev \
     x11-xserver-utils \
@@ -160,21 +160,6 @@ ENV LC_ALL=en_US.UTF-8
 ############################################
 ENV LIBRARY_PATH="/usr/local"
 ENV PATH="${LIBRARY_PATH}/bin:${PATH}"
-
-
-############################################
-#  CUDA drivers and toolkit installation
-############################################
-ENV CUDA_VERSION="12.8.0"
-RUN wget "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin" && \
-    mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
-    wget "https://developer.download.nvidia.com/compute/cuda/${CUDA_VERSION}/local_installers/cuda-repo-ubuntu2004-12-8-local_${CUDA_VERSION}-570.86.10-1_amd64.deb"
-
-RUN dpkg -i cuda-repo-ubuntu2004-12-8-local_${CUDA_VERSION}-570.86.10-1_amd64.deb && \
-    cp /var/cuda-repo-ubuntu2004-12-8-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
-    apt-get update && apt-get -y install cuda-toolkit-12-8 cuda-drivers && \
-    rm cuda-repo-ubuntu2004-12-8-local_${CUDA_VERSION}-570.86.10-1_amd64.deb /etc/apt/sources.list.d/cuda-ubuntu2004-12-8-local.list && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cuda-repo-ubuntu2004-12-8-local
 
 
 ###################################
@@ -289,6 +274,28 @@ RUN cmake -S /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION} -B /tmp/qt-crea
         -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" && \
     cmake --build /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}/build --parallel $(nproc) --verbose --target install && \
     rm -rf /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}
+
+
+##################################################
+#  CUDA & CUDNN drivers and toolkit installation
+##################################################
+ENV CUDA_VERSION="12.8.0"
+RUN wget "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin" && \
+    mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
+    wget "https://developer.download.nvidia.com/compute/cuda/${CUDA_VERSION}/local_installers/cuda-repo-ubuntu2004-12-8-local_${CUDA_VERSION}-570.86.10-1_amd64.deb"
+
+RUN dpkg -i cuda-repo-ubuntu2004-12-8-local_${CUDA_VERSION}-570.86.10-1_amd64.deb && \
+    cp /var/cuda-repo-ubuntu2004-12-8-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
+    apt-get update && apt-get -y install cuda-toolkit-12-8 cuda-drivers && \
+    rm cuda-repo-ubuntu2004-12-8-local_${CUDA_VERSION}-570.86.10-1_amd64.deb /etc/apt/sources.list.d/cuda-ubuntu2004-12-8-local.list && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cuda-repo-ubuntu2004-12-8-local
+
+ENV CUDNN_VERSION="9.8.0"
+RUN wget "wget https://developer.download.nvidia.com/compute/cudnn/${CUDNN_VERSION}/local_installers/cudnn-local-repo-ubuntu2004-${CUDNN_VERSION}_1.0-1_amd64.deb" && \
+    dpkg -i cudnn-local-repo-ubuntu2004-${CUDNN_VERSION}_1.0-1_amd64.deb && \
+    cp /var/cudnn-local-repo-ubuntu2004-9.8.0/cudnn-*-keyring.gpg /usr/share/keyrings/
+
+RUN apt-get update && apt-get -y install cudnn-cuda-12
 
 
 ###################################

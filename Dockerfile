@@ -137,17 +137,59 @@ RUN cd /tmp && \
 
 RUN cd /tmp && \
 	git clone "https://github.com/uxlfoundation/oneTBB.git" && \
-	cmake -S /tmp/oneTBB -B /tmp/oneTBB/build -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=OFF && \
+	cmake -S /tmp/oneTBB -B /tmp/oneTBB/build \
+        -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \ 
+        -DBUILD_SHARED_LIBS=OFF && \
 	cmake --build /tmp/oneTBB/build --target install --parallel $(nproc) && \
 	rm -rf /tmp/oneTBB
 
 RUN cd /tmp && \
     git clone "https://github.com/Arthu-RL/libink.git" && \
     cmake -S /tmp/libink -B /tmp/libink/build \ 
-        -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
-        -DCMAKE_BUILD_TYPE=Release && \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
     cmake --build /tmp/libink/build --target install --parallel $(nproc) && \
     rm -rf /tmp/libink
+
+RUN cd /tmp && \
+    git clone https://github.com/opencv/opencv.git && \
+    git clone https://github.com/opencv/opencv_contrib.git && \
+    cmake -S /tmp/opencv -B /tmp/opencv/build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DOPENCV_EXTRA_MODULES_PATH=/tmp/opencv_contrib/modules \
+        -DBUILD_opencv_python3=OFF \
+        -DBUILD_opencv_python2=OFF \
+        -DBUILD_EXAMPLES=OFF \
+        -DWITH_CUDA=ON \
+        -DWITH_CUDNN=ON \
+        -DOPENCV_DNN_CUDA=ON \
+        -DWITH_OPENGL=ON \
+        -DWITH_V4L=ON \
+        -DWITH_GTK=ON \
+        -DWITH_TBB=ON \
+        -DTBB_DIR=${LIBRARY_PATH}/lib/cmake/TBB \
+        -DBUILD_TESTS=OFF \
+        -DBUILD_PERF_TESTS=OFF && \
+    cmake --build /tmp/opencv/build --target install --parallel $(nproc) && \
+    rm -rf /tmp/opencv /tmp/opencv_contrib
+
+RUN cd /tmp && \
+    git clone --recursive https://github.com/NVIDIA/TensorRT.git && \
+    cmake -S /tmp/TensorRT -B /tmp/TensorRT/build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
+        -DBUILD_PARSERS=ON \
+        -DBUILD_PLUGINS=ON \
+        -DBUILD_SAMPLES=OFF \
+        -DBUILD_TESTS=OFF \
+        -DBUILD_PYTHON=OFF \
+        -DBUILD_ONNX_PARSER=ON \
+        -DONNX_NAMESPACE=onnx && \
+    cmake --build /tmp/TensorRT/build --target install --parallel $(nproc) && \
+    rm -rf /tmp/TensorRT
+
 
 ############################################
 # Important environment variables set up
