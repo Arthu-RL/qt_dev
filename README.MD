@@ -4,7 +4,7 @@ This repository provides a Docker image for building and developing applications
 
 ## Get Started
 
-Pull the image and run the container like in the `Run the Docker Container` section.
+Pull the image and run the container like in the `Run the Docker Container` section. You can use the base to build your own customized QtCreator Dockerfile.
 
 ```bash
 docker pull arthurrl/vulkan_dev:latest
