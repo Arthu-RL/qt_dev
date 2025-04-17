@@ -18,7 +18,7 @@ def parse_build_args(build_args: str) -> Dict[str, str]:
     
     return build_args_dict
 
-def build(image: str, dockerfile: str, build_args: Optional[str]) -> None:
+def build(image: str, dockerfile: str, build_args: Optional[str], retry: int) -> None:
     build_args_cmd: str = ""
     if build_args:
         build_args_dict = parse_build_args(build_args)
@@ -29,12 +29,14 @@ def build(image: str, dockerfile: str, build_args: Optional[str]) -> None:
 
     log.info(f"Running build command: {build_command}")
 
-    try:
-        result = sp.run(build_command, shell=True, check=True, capture_output=True, text=True)
-        log.info(f"Build output:\n{result.stderr}")
-    except sp.CalledProcessError as e:
-        log.error(f"Build failed with error:\n{e.stderr}")
-        exit(1)
+    for _ in range(retry):
+        try:
+            result = sp.run(build_command, shell=True, check=True, capture_output=True, text=True)
+            log.info(f"Build output:\n{result.stderr}")
+
+            break
+        except sp.CalledProcessError as e:
+            log.error(f"Build failed with error:\n{e.stderr}")
 
 def run(project_path: str, image: str, container_name: str) -> None:
     run_command = f"""
@@ -80,6 +82,7 @@ parser: argparse.ArgumentParser = argparse.ArgumentParser(description="Build Vul
 
 parser.add_argument('--run', dest='run', action='store_true', help='Run container instead of building', required=False)
 parser.add_argument('--build', dest='build', action='store_true', help='Build docker image', required=False)
+parser.add_argument('-r', '--retry', dest='retry', type=int, help='Build docker image', required=False, default=1)
 parser.add_argument('--base', dest='base', action='store_true', help='Build docker image Base/Derived', required=False)
 parser.add_argument('--push', dest='push', action='store_true', help='Push image to dockerhub after building', required=False)
 parser.add_argument('-p', '--project_path', dest='project_path', type=str, help='Path to the project', default=f"{os.getenv('HOME')}/dev")
@@ -103,7 +106,7 @@ image: str = f"{args.image_repo}/{args.image_name}:{args.image_tag}"
 image = image.removeprefix('/')
 
 if args.build:
-    build(image=image, dockerfile='Dockerfile.base' if args.base else 'Dockerfile', build_args=args.build_args)
+    build(image=image, dockerfile='Dockerfile.base' if args.base else 'Dockerfile', build_args=args.build_args, retry=args.retry)
 
 if args.run:
     run(project_path=args.project_path, image=image, container_name=args.container_name)

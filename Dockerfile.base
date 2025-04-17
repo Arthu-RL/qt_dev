@@ -13,10 +13,9 @@ FROM ubuntu:20.04
 #  Labels for metadata and other configs
 ###########################################
 
-LABEL maintainer="ArthurRL"
-LABEL version="base"
-LABEL description="This image builds Qt from source with support for GCC 14, X11, CUDA, CUDNN and Qt Creator."
-LABEL base_image="ubuntu:20.04"
+LABEL org.opencontainers.image.authors="ArthurRL"
+LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.description="Development environment with Qt, FFmpeg, CUDA"
 
 # Set non-interactive mode for apt-get installs
 ENV DEBIAN_FRONTEND=noninteractive
@@ -27,7 +26,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 #######################################
 ENV TZ=America/Sao_Paulo
 RUN apt-get update && apt-get -y upgrade && \
-    apt-get install -y tzdata && \
+    apt-get install -y --no-install-recommends tzdata && \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
     rm -rf /var/lib/apt/lists/*
 
@@ -58,11 +57,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     texinfo \
     pkg-config \
     gnupg \
+    gnupg2 \
+    yasm \
     locales \
     lsb-release \
     ca-certificates \
     software-properties-common \
-    gnupg \
     libgmp-dev \
     libmpfr-dev \
     libmpc-dev \
@@ -123,9 +123,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     liblapack-dev \
     libopus-dev \
     libminizip-dev \
-    libavutil-dev \
-    libavformat-dev \
-    libavcodec-dev \
+    libeigen3-dev \
     libevent-dev \
     libasound2-dev \
     libcpprest-dev \
@@ -227,6 +225,22 @@ RUN mkdir /tmp/cmake-${CMAKE_VERSION}/build && \
     rm -rf /tmp/cmake-${CMAKE_VERSION}
 
 
+############################################
+#  Installing FFmpeg (newer version)
+############################################
+ENV FFMPEG_VERSION="n7.1.1"
+RUN wget https://github.com/FFmpeg/FFmpeg/archive/refs/tags/${FFMPEG_VERSION}.tar.gz -O /tmp/FFmpeg-${FFMPEG_VERSION}.tar.gz && \
+    tar -xzf /tmp/FFmpeg-${FFMPEG_VERSION}.tar.gz -C /tmp/ && \
+    cd /tmp/FFmpeg-${FFMPEG_VERSION} && \
+    ./configure --prefix=/usr --enable-shared && \
+    make -j$(nproc) && \
+    make install && \
+    # Update library links
+    ldconfig && \
+    cd / && \
+    rm -rf /tmp/FFmpeg-${FFMPEG_VERSION} /tmp/FFmpeg-${FFMPEG_VERSION}.tar.gz
+
+
 ###################################
 # Building Qt
 ###################################
@@ -291,24 +305,28 @@ RUN dpkg -i cuda-repo-ubuntu2004-12-8-local_${CUDA_VERSION}-570.86.10-1_amd64.de
     apt-get clean && rm -rf /var/lib/apt/lists/* /var/cuda-repo-ubuntu2004-12-8-local
 
 ENV CUDNN_VERSION="9.8.0"
-RUN wget "wget https://developer.download.nvidia.com/compute/cudnn/${CUDNN_VERSION}/local_installers/cudnn-local-repo-ubuntu2004-${CUDNN_VERSION}_1.0-1_amd64.deb" && \
-    dpkg -i cudnn-local-repo-ubuntu2004-${CUDNN_VERSION}_1.0-1_amd64.deb && \
-    cp /var/cudnn-local-repo-ubuntu2004-9.8.0/cudnn-*-keyring.gpg /usr/share/keyrings/
-
-RUN apt-get update && apt-get -y install cudnn-cuda-12
+RUN wget "https://developer.download.nvidia.com/compute/cudnn/${CUDNN_VERSION}/local_installers/cudnn-local-repo-ubuntu2004-${CUDNN_VERSION}_1.0-1_amd64.deb"
+RUN dpkg -i cudnn-local-repo-ubuntu2004-${CUDNN_VERSION}_1.0-1_amd64.deb && \
+    cp /var/cudnn-local-repo-ubuntu2004-${CUDNN_VERSION}/cudnn-*-keyring.gpg /usr/share/keyrings/
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        cudnn \
+        cudnn-cuda-12
+RUN rm -f cudnn-local-repo-ubuntu2004-${CUDNN_VERSION}_1.0-1_amd64.deb && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cudnn-local-repo-ubuntu200
 
 
 ###################################
 # Final CleanUp
 ###################################
-RUN apt-get autoremove -y
+RUN apt-get clean && apt-get autoremove -y
 
 
 ###################################
 # Important environment variables
 ###################################
 
-ENV PATH="${LIBRARY_PATH}/bin:${PATH}:${LIBRARY_PATH}:${LIBRARY_PATH}/include:${QTCREATOR}/bin:${QT_DIR}/gcc_64/bin:${LLVM_INSTALL_DIR}/bin:${PATH}"
+ENV PATH="${LIBRARY_PATH}/bin:${LIBRARY_PATH}/cuda:${LIBRARY_PATH}:${LIBRARY_PATH}/include:${QTCREATOR}/bin:${QT_DIR}/gcc_64/bin:${LLVM_INSTALL_DIR}/bin:${PATH}"
 ENV QT_QPA_PLATFORM_PLUGIN_PATH="${QT_DIR}/gcc_64/plugins/platforms"
-ENV LD_LIBRARY_PATH="${QTCREATOR}/lib:${QT_DIR}/gcc_64/lib:${QT_DIR}/lib:${LLVM_INSTALL_DIR}/lib:${LIBRARY_PATH}/gcc-${GCC_VERSION}/lib64"
+ENV LD_LIBRARY_PATH="${LIBRARY_PATH}/cuda/lib64:${QTCREATOR}/lib:${QT_DIR}/gcc_64/lib:${QT_DIR}/lib:${LLVM_INSTALL_DIR}/lib:${LIBRARY_PATH}/gcc-${GCC_VERSION}/lib64"
 ENV PKG_CONFIG_PATH="${QT_DIR}/gcc_64/lib/pkgconfig:PKG_CONFIG_PATH"

@@ -15,7 +15,7 @@ docker pull arthurrl/vulkan_dev:latest
 To build the Docker image with the desired configurations, run the following command:
 
 ```bash
-python build_run.py --build --base --image_tag="base"
+python build_run.py --build --base --retry 3 --image_tag="base"
 ```
 
 ```bash

@@ -34,13 +34,20 @@ RUN cmake -S /tmp/glfw-${GLFW_VERSION} -B /tmp/glfw-${GLFW_VERSION}/build -DCMAK
 
 # Clone and install SDL2 from source
 RUN cd /tmp && \
-    git clone https://github.com/libsdl-org/SDL.git -b SDL2 && \
+    git clone "https://github.com/libsdl-org/SDL.git" -b SDL2 && \
     cmake -S /tmp/SDL -B /tmp/SDL/build -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
     -DSDL_ALSA=ON \
     -DSDL_OPENGL=ON \
     -DSDL_VULKAN=ON && \
     cmake --build /tmp/SDL/build --target install --parallel $(nproc) && \
     rm -rf /tmp/SDL
+
+
+RUN cd /tmp && \
+	git clone "https://github.com/libsdl-org/SDL_ttf.git" -b SDL2 && \
+	cmake -S /tmp/SDL_ttf -B /tmp/SDL_ttf/build -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
+	cmake --build /tmp/SDL_ttf/build --target install --parallel $(nproc) && \
+	rm -rf /tmp/SDL_ttf
 
 
 # Download and install GLAD-generated files (OpenGL)
@@ -128,12 +135,7 @@ RUN wget "https://github.com/raysan5/raylib/releases/download/${RAYLIB_VERSION}/
 RUN cp -r /tmp/raylib-${RAYLIB_VERSION}_linux_amd64/lib/* ${LIBRARY_PATH}/lib && \
     cp -r /tmp/raylib-${RAYLIB_VERSION}_linux_amd64/include/* ${LIBRARY_PATH}/include/ && \
     rm -rf /tmp/raylib-${RAYLIB_VERSION}_linux_amd64
-    
-RUN cd /tmp && \
-	git clone "https://github.com/libsdl-org/SDL_ttf.git" -b SDL2 && \
-	cmake -S /tmp/SDL_ttf -B /tmp/SDL_ttf/build -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
-	cmake --build /tmp/SDL_ttf/build --target install --parallel $(nproc) && \
-	rm -rf /tmp/SDL_ttf
+
 
 RUN cd /tmp && \
 	git clone "https://github.com/uxlfoundation/oneTBB.git" && \
@@ -143,6 +145,7 @@ RUN cd /tmp && \
 	cmake --build /tmp/oneTBB/build --target install --parallel $(nproc) && \
 	rm -rf /tmp/oneTBB
 
+
 RUN cd /tmp && \
     git clone "https://github.com/Arthu-RL/libink.git" && \
     cmake -S /tmp/libink -B /tmp/libink/build \ 
@@ -151,9 +154,10 @@ RUN cd /tmp && \
     cmake --build /tmp/libink/build --target install --parallel $(nproc) && \
     rm -rf /tmp/libink
 
+
 RUN cd /tmp && \
-    git clone https://github.com/opencv/opencv.git && \
-    git clone https://github.com/opencv/opencv_contrib.git && \
+    git clone "https://github.com/opencv/opencv.git" && \
+    git clone "https://github.com/opencv/opencv_contrib.git" && \
     cmake -S /tmp/opencv -B /tmp/opencv/build \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
@@ -175,11 +179,27 @@ RUN cd /tmp && \
     cmake --build /tmp/opencv/build --target install --parallel $(nproc) && \
     rm -rf /tmp/opencv /tmp/opencv_contrib
 
+
+ENV TENSORRT_VERSION="10.9.0"
+RUN wget "https://developer.nvidia.com/downloads/compute/machine-learning/tensorrt/${TENSORRT_VERSION}/tars/TensorRT-${TENSORRT_VERSION}.34.Linux.x86_64-gnu.cuda-12.8.tar.gz" -O /tmp/tensorrt.tar.gz
+RUN mkdir -p ${LIBRARY_PATH}/tensorrt && \
+    tar -xzf /tmp/tensorrt.tar.gz -C ${LIBRARY_PATH}/tensorrt --strip-components=1 && \
+    rm /tmp/tensorrt.tar.gz
+RUN echo "${LIBRARY_PATH}/tensorrt/lib" > /etc/ld.so.conf.d/tensorrt.conf && ldconfig
+
+
+RUN pip3 install onnx
 RUN cd /tmp && \
-    git clone --recursive https://github.com/NVIDIA/TensorRT.git && \
+    git clone --recursive "https://github.com/NVIDIA/TensorRT.git" && \
     cmake -S /tmp/TensorRT -B /tmp/TensorRT/build \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
+        -DCUDA_TOOLKIT_ROOT_DIR=${LIBRARY_PATH}/cuda \
+        -DCMAKE_CUDA_COMPILER=${LIBRARY_PATH}/cuda/bin/nvcc \
+        -DCMAKE_CUDA_ARCHITECTURES="50;52;60;61;70;75;80;86" \
+        -DTRT_LIB_DIR=${LIBRARY_PATH}/tensorrt/lib \
+        -Dnvinfer_LIB_PATH=${LIBRARY_PATH}/tensorrt/lib/libnvinfer.so \
+        -DTRT_BIN_DIR=${LIBRARY_PATH}/bin \
         -DBUILD_PARSERS=ON \
         -DBUILD_PLUGINS=ON \
         -DBUILD_SAMPLES=OFF \
@@ -197,6 +217,12 @@ RUN cd /tmp && \
 ENV VULKAN_ROOT="${LIBRARY_PATH}/VulkanSDK/${VULKAN_SDK_VERSION}"
 RUN chmod +x ${VULKAN_ROOT}/setup-env.sh && \
     echo "source ${VULKAN_ROOT}/setup-env.sh" >> ~/.bashrc
+
+
+############################################
+# Clean apt
+############################################
+RUN apt-get clean && apt-get autoremove -y
 
 
 ############################################
