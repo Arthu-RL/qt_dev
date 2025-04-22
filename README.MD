@@ -1,12 +1,12 @@
 # Vulkan Development Environment
 
-This repository provides a Docker image for building and developing applications using **Qt**, **Qt Creator**, **Vulkan**, **GLFW**, **Dear ImGui**, **CUDA**, and other tools with support for **X11**.
+This repository provides a Docker image for building and developing applications for education/learning purposes using **Qt**, **Qt Creator**, **Vulkan**, **GLFW**, **Dear ImGui**, **CUDA**, and other tools with support for **X11**.
 
 ---
 
 ## 🧰 Technologies Included
 
-This Docker environment includes:
+The Docker environment that you can build includes:
 
 - **[CMake](https://github.com/Kitware/CMake)** (Apache 2.0)
 - **[GLFW](https://github.com/glfw/glfw)** (zlib/libpng license)
