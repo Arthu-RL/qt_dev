@@ -219,7 +219,7 @@ RUN chmod +x ${VULKAN_ROOT}/setup-env.sh && \
     echo "source ${VULKAN_ROOT}/setup-env.sh" >> ~/.bashrc
 
 # Set include paths for compilation
-ENV CPLUS_INCLUDE_PATH="${LIBRARY_PATH}/include:${LIBRARY_PATH}/tensorrt/include:${LIBRARY_PATH}/cuda/include:${CPLUS_INCLUDE_PATH}"
+ENV CPLUS_INCLUDE_PATH="${LIBRARY_PATH}/include:${LIBRARY_PATH}/tensorrt/include:${LIBRARY_PATH}/cuda/include"
 ENV LD_LIBRARY_PATH="${LIBRARY_PATH}/lib:${LIBRARY_PATH}/tensorrt/lib:${LIBRARY_PATH}/cuda/lib64:${LD_LIBRARY_PATH}"
 ENV PATH="${LIBRARY_PATH}/cuda/bin:${LIBRARY_PATH}/tensorrt/bin:${PATH}"
 ENV PKG_CONFIG_PATH="${LIBRARY_PATH}/lib/pkgconfig:${PKG_CONFIG_PATH}"
@@ -232,13 +232,17 @@ RUN apt-get clean && apt-get autoremove -y
 
 
 ############################################
+# Pre-Configs
+############################################
+WORKDIR ["/workspace"]
+
+
+############################################
 # Monitor
 ############################################
 # Copy Python script
 RUN mkdir -p /app
 COPY ./monitor.py /app/monitor.py
-
-WORKDIR ["/workspace"]
 
 # Default shell for interactive debugging (optional)
 SHELL ["/bin/bash", "-c"]
