@@ -41,3 +41,12 @@ To build the Docker image:
 ```bash
 python build_run.py --build --base --retry 3 --image_tag="base"
 python build_run.py --build --image_tag="1.0"
+```
+
+## 🔧 Run the Docker Image
+
+To run the Docker image:
+
+```bash
+python build_run.py --run --image_tag="1.0"
+```
