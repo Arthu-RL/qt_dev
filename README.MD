@@ -30,7 +30,7 @@ The Docker environment that you can build includes:
 - **[oneTBB (Intel TBB)](https://github.com/oneapi-src/oneTBB)** (Apache 2.0 License)
 - **[OpenCV](https://opencv.org/)** (Apache 2.0 License)
 - **[C3C Compiler](https://github.com/c3lang/c3c)** (LGPL-3.0 License)
-- **[libink](https://github.com/inksuite/libink)** (MIT License)
+- **[libink](https://github.com/Arthu-RL/libink)** (MIT License)
 
 ---
 
