@@ -138,6 +138,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xorg-dev \
     xterm \
     vim \
+    nasm \
+    libx264-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get -y upgrade \
@@ -232,7 +234,7 @@ ENV FFMPEG_VERSION="n7.1.1"
 RUN wget https://github.com/FFmpeg/FFmpeg/archive/refs/tags/${FFMPEG_VERSION}.tar.gz -O /tmp/FFmpeg-${FFMPEG_VERSION}.tar.gz && \
     tar -xzf /tmp/FFmpeg-${FFMPEG_VERSION}.tar.gz -C /tmp/ && \
     cd /tmp/FFmpeg-${FFMPEG_VERSION} && \
-    ./configure --prefix=/usr --enable-shared && \
+    ./configure --prefix=/usr --enable-shared --enable-gpl --enable-libx264 && \
     make -j$(nproc) && \
     make install && \
     # Update library links
