@@ -41,9 +41,7 @@ def build(image: str, dockerfile: str, build_args: Optional[str], retry: int) ->
 def run(project_path: str, image: str, container_name: str) -> None:
     run_command = f"""
         docker rm -f {container_name} && \
-        docker run --gpus all --runtime=nvidia --privileged -d --name {container_name} \
-            -e NVIDIA_VISIBLE_DEVICES=all \
-            -e NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics \
+        docker run --gpus all --privileged -d --name {container_name} \
             -e DISPLAY=$DISPLAY \
             -e XDG_RUNTIME_DIR=/tmp/runtime-root \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
