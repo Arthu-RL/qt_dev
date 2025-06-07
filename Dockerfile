@@ -59,10 +59,24 @@ RUN mkdir -p ${LIBRARY_PATH}/src/glad && \
     mv /tmp/glad/src/* ${LIBRARY_PATH}/src/glad/ && \
     rm -rf /tmp/glad
 
-RUN g++ -c ${LIBRARY_PATH}/src/glad/gl.c -o ${LIBRARY_PATH}/src/glad/glad.o && \
-    ar rcs ${LIBRARY_PATH}/lib/libglad.a ${LIBRARY_PATH}/src/glad/glad.o && \
-    rm ${LIBRARY_PATH}/src/glad/glad.o
-
+# Build BOTH static and shared GLAD libraries with PIC support
+RUN cd ${LIBRARY_PATH}/src/glad && \
+    echo "Building GLAD libraries with PIC support..." && \
+    \
+    # Build static library (with -fPIC for shared compatibility)
+    gcc -fPIC -c gl.c -o glad.o && \
+    ar rcs ${LIBRARY_PATH}/lib/libglad.a glad.o && \
+    \
+    # Build shared library
+    gcc -shared -fPIC gl.c -o ${LIBRARY_PATH}/lib/libglad.so.1.0.0 && \
+    ln -sf libglad.so.1.0.0 ${LIBRARY_PATH}/lib/libglad.so.1 && \
+    ln -sf libglad.so.1 ${LIBRARY_PATH}/lib/libglad.so && \
+    \
+    # Cleanup and verify
+    rm glad.o && \
+    echo "✓ Static GLAD:  $(file ${LIBRARY_PATH}/lib/libglad.a)" && \
+    echo "✓ Shared GLAD:  $(file ${LIBRARY_PATH}/lib/libglad.so)" && \
+    ls -la ${LIBRARY_PATH}/lib/libglad.*
 
 ENV DEARIMGUI_VERSION="1.91.8"
 RUN wget "https://github.com/ocornut/imgui/archive/refs/tags/v${DEARIMGUI_VERSION}.tar.gz" -O /tmp/imgui-${DEARIMGUI_VERSION}.tar.gz && \

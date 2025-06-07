@@ -39,8 +39,8 @@ The Docker environment that you can build includes:
 To build the Docker image:
 
 ```bash
-python build_run.py --build --base --retry 2 --image_tag="base"
-python build_run.py --build --retry 2 --image_tag="1.0"
+python3 build_run.py --build --base --retry 2 --image_tag="base"
+python3 build_run.py --build --retry 2 --image_tag="1.0"
 ```
 
 ## 🔧 Run the Docker Image
@@ -48,5 +48,5 @@ python build_run.py --build --retry 2 --image_tag="1.0"
 To run the Docker image:
 
 ```bash
-python build_run.py --run --project_path="/absolute/path/to/your/workspace" --image_tag="1.0"
+python3 build_run.py --run --project_path="/absolute/path/to/your/workspace" --image_tag="1.0"
 ```

@@ -40,15 +40,16 @@ def build(image: str, dockerfile: str, build_args: Optional[str], retry: int) ->
 
 def run(project_path: str, image: str, container_name: str) -> None:
     run_command = f"""
+        xhost +local:root && \
         docker rm -f {container_name} && \
         docker run --gpus all --privileged -d --name {container_name} \
             -e DISPLAY=$DISPLAY \
-            -e XDG_RUNTIME_DIR=/tmp/runtime-root \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
             -v {project_path}:/workspace \
             -v {project_path}/qtcreator_config:/root/.config/QtProject \
             -w /workspace \
-            {image}
+            {image} && \
+        xhost -local:root
     """.strip()
 
     log.info(f"Run command:\n{run_command}")
