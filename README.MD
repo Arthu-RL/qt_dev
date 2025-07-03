@@ -1,4 +1,4 @@
-# Vulkan Development Environment
+# Qt Development Environment
 
 This repository provides a Docker image for building and developing applications for education/learning purposes using **Qt**, **Qt Creator**, **Vulkan**, **GLFW**, **Dear ImGui**, **CUDA**, and other tools with support for **X11**.
 
