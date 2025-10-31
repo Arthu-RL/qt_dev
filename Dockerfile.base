@@ -270,7 +270,7 @@ RUN wget "https://download.qt.io/official_releases/qtcreator/${QTCREATOR_VERSION
 RUN cmake -S /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION} -B /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}/build -DCMAKE_INSTALL_PREFIX=${QTCREATOR} \
         -DCMAKE_INSTALL_PREFIX=${QTCREATOR} -DCMAKE_BUILD_TYPE=Release -G Ninja \
         -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" && \
-    cmake --build /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}/build --parallel 2 --verbose --target install && \
+    cmake --build /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}/build --parallel $(nproc) --verbose --target install && \
     rm -rf /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}
 
 
