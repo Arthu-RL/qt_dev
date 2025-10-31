@@ -1,21 +1,33 @@
 ###########################################
-#  Ubuntu 20.04 as the base image 
+#  Ubuntu 22.04 as the base image 
 ###########################################
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 
 ###########################################
 #  Build Args
 ###########################################
-# Empty
+ARG GCC_VERSION=13.4.0
+ARG LLVM_VERSION=18
+ARG NINJA_VERSION=1.12.1
+ARG CMAKE_VERSION=3.31.6
+ARG QT_VERSION=6.10.0
+ARG QTCREATOR_VERSION=18.0.0
+ARG FFMPEG_VERSION=n7.1.1
+ARG NVIDIA_DRIVER=575.57.08
+ARG CUDA_VERSION=12.8.0
+ARG CUDNN_VERSION=9.8.0
+ARG GO_VERSION=1.25.3
+
 
 ###########################################
 #  Labels for metadata and other configs
 ###########################################
-
 LABEL org.opencontainers.image.authors="ArthurRL"
 LABEL org.opencontainers.image.version="1.0.0"
 LABEL org.opencontainers.image.description="Development environment with Qt, FFmpeg, CUDA"
+LABEL org.opencontainers.image.source="https://github.com/Arthu-RL"
+LABEL org.opencontainers.image.licenses="MIT"
 
 # Set non-interactive mode for apt-get installs
 ENV DEBIAN_FRONTEND=noninteractive
@@ -39,111 +51,80 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pip3 install psutil && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-
-##########################################
-#  Install basic dependencies with apt
-##########################################
+#########################################################
+# Base Development & Build Essentials
+#########################################################
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Core toolchain
     build-essential \
-    curl \
-    wget \
-    unzip \
+    ccache \
+    # Utilities and download tools
+    curl wget unzip git nano \
+    # Kernel module support
     dkms \
-    git \
-    make \
-    gdb \
-    flex \
-    bison \
-    texinfo \
+    # Debuggers
+    gdb lldb \
+    # Parser generators and docs
+    flex bison texinfo \
+    # Library configuration helper
     pkg-config \
-    gnupg \
-    gnupg2 \
-    yasm \
-    locales \
-    lsb-release \
-    ca-certificates \
-    software-properties-common \
-    libgmp-dev \
-    libmpfr-dev \
-    libmpc-dev \
-    lldb \
-    libdw-dev \
-    libffi-dev \
-    libxml2 \
-    zlib1g-dev \
-    libsqlite3-dev \
-    libpqxx-dev \
-    libssl-dev \
-    libsecret-1-dev \
-    libgcrypt20-dev \
-    xz-utils \
-    libxcb-cursor-dev \
-    libx11-xcb1 \
-    libx11-dev \
-    libxi6 \
-    libsm6 \
-    libxext6 \
-    libxrender1 \
-    libxext-dev \
-    libxrandr-dev \
-    libxrender-dev \
-    libxcb1-dev \
-    libxcb-glx0-dev \
-    libxcb-keysyms1-dev \
-    libxcb-image0-dev \
-    libxcb-shm0-dev \
-    libxcb-icccm4-dev \
-    libxcb-sync0-dev \
-    libxcb-xfixes0-dev \
-    libxcb-shape0-dev \
-    libxcb-randr0-dev \
-    libxcb-render-util0-dev \
-    libxcb-xinerama0-dev \
-    libxi-dev \
-    libxkbcommon-dev \
-    libxkbcommon-x11-dev \
-    libxkbcommon-x11-0 \
-    libfontconfig1-dev \
-    libfreetype6-dev \
-    libglvnd-dev \
-    libgl1-mesa-dev \
-    libegl1-mesa-dev \
-    libgles2-mesa-dev \
-    libgtk-3-dev \
-    libsm6 \
-    libice6 \
-    libpci-dev \
-    libpulse-dev \
-    libudev-dev \
-    libxtst-dev \
-    mesa-common-dev \
-    mesa-utils \
-    libjsoncpp-dev \
-    libblas-dev \
-    liblapack-dev \
-    libopus-dev \
-    libminizip-dev \
-    libeigen3-dev \
-    libevent-dev \
-    libasound2-dev \
-    libcpprest-dev \
-    alsa-base \
-    alsa-utils \
-    pulseaudio \
-    libvulkan1 vulkan-tools vulkan-utils mesa-vulkan-drivers \
-    libglvnd0 \
-    libglu1-mesa-dev \
-    x11-xserver-utils \
-    libwayland-dev wayland-protocols \
-    xorg-dev \
-    xterm \
-    nano \
-    nasm \
-    libx264-dev \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    # Repository and key management
+    gnupg gnupg2 ca-certificates software-properties-common \
+    # System info and locale setup
+    lsb-release locales xz-utils \
 
-RUN apt-get update && apt-get -y upgrade \
-    && apt-get autoremove
+    # Compiler, Math & Low-level Libraries
+    # Required to build GCC/Clang
+    libgmp-dev libmpfr-dev libmpc-dev \
+    # Debug info, XML, compression, FFI
+    libffi-dev libdw-dev libxml2 zlib1g-dev \
+    # Crypto and keyring libs
+    libssl-dev libnghttp2-dev libsecret-1-dev libgcrypt20-dev \
+    # SQLite + PostgreSQL C++ bindings
+    libsqlite3-dev libpqxx-dev \
+
+    # X11 + Wayland + Input Libraries
+    libx11-dev libxext-dev libxrender-dev libxrandr-dev \
+    libxi-dev libxkbcommon-dev libxkbcommon-x11-dev \
+    libfontconfig1-dev libfreetype6-dev libsm6 libice6 \
+    libx11-xcb1 libxrender1 libxext6 libxi6 \
+    x11-xserver-utils xorg-dev xterm \
+    libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev \
+    libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev \
+    libxcb-sync0-dev libxcb-xfixes0-dev libxcb-shape0-dev \
+    libxcb-randr0-dev libxcb-render-util0-dev libxcb-xinerama0-dev \
+    libxcb-cursor-dev libxkbcommon-x11-0 \
+    libwayland-dev wayland-protocols \
+
+    # Graphics, OpenGL, Vulkan, and GPU Interfaces
+    libglvnd-dev libglvnd0 \
+    libgl1-mesa-dev libegl1-mesa-dev libgles2-mesa-dev \
+    mesa-common-dev mesa-utils \
+    libglu1-mesa-dev \
+    libvulkan1 vulkan-tools mesa-vulkan-drivers \
+    libpci-dev libudev-dev \
+
+    # Audio & Multimedia
+    libasound2-dev alsa-base alsa-utils \
+    libpulse-dev pulseaudio \
+    libopus-dev \
+    libx264-dev \
+
+    # Dependencies for Qt Creator
+    libedit-dev \
+    libzstd-dev \
+    libcurl4-openssl-dev \
+
+    # Compression, Math & Networking Utilities
+    libjsoncpp-dev libminizip-dev libeigen3-dev libevent-dev \
+    libblas-dev liblapack-dev \
+    # C++ REST SDK
+    # libcpprest-dev \
+
+    # Misc / Useful Tools
+    # Editor + assembler
+    nano nasm \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
 ###################################
@@ -159,14 +140,12 @@ ENV LC_ALL=en_US.UTF-8
 #  Global installation ENV
 ############################################
 ENV LIBRARY_PATH="/usr/local"
-ENV PATH="${LIBRARY_PATH}/bin:${PATH}"
+ENV PATH="${LIBRARY_PATH}/bin:${PATH:-}"
 
 
 ###################################
 # C++ configs
 ###################################
-ENV GCC_VERSION="14.2.0"
-
 RUN wget -q "https://github.com/gcc-mirror/gcc/archive/refs/tags/releases/gcc-${GCC_VERSION}.tar.gz" -O /tmp/gcc.tar.gz && \
     tar -xzf /tmp/gcc.tar.gz -C /tmp/ && \
     rm -f /tmp/gcc.tar.gz
@@ -182,14 +161,10 @@ RUN mkdir -p /tmp/gcc-build && cd /tmp/gcc-build && \
     cd / && \
     rm -rf /tmp/gcc-releases-gcc-${GCC_VERSION} /tmp/gcc-build
 
-ENV CC="gcc"
-ENV CXX="g++"
-
 
 ###################################
 #  Install LLVM and Clang
 ###################################
-ENV LLVM_VERSION="18"
 RUN wget -q "https://apt.llvm.org/llvm.sh" -O /tmp/llvm.sh && \
     chmod +x /tmp/llvm.sh && \
     /tmp/llvm.sh ${LLVM_VERSION} && \
@@ -202,7 +177,6 @@ RUN apt-get install llvm-18-dev libclang-18-dev clang-18 -y --no-install-recomme
 ############################################
 #  Installing Ninja (newer version)
 ############################################
-ENV NINJA_VERSION="1.12.1"
 RUN wget -q "https://github.com/ninja-build/ninja/releases/download/v${NINJA_VERSION}/ninja-linux.zip" -O /tmp/ninja-linux.zip && \
     unzip /tmp/ninja-linux.zip -d /tmp/ && \
     rm -rf /tmp/ninja-linux.zip
@@ -213,7 +187,6 @@ RUN mv /tmp/ninja ${LIBRARY_PATH}/bin
 ############################################
 #  Installing CMake (newer version)
 ############################################
-ENV CMAKE_VERSION="3.31.6"
 RUN wget "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz" -O /tmp/cmake-${CMAKE_VERSION}.tar.gz && \
     tar -xzvf /tmp/cmake-${CMAKE_VERSION}.tar.gz -C /tmp/ && \
     rm -rf /tmp/cmake-${CMAKE_VERSION}.tar.gz
@@ -230,7 +203,6 @@ RUN mkdir /tmp/cmake-${CMAKE_VERSION}/build && \
 ############################################
 #  Installing FFmpeg (newer version)
 ############################################
-ENV FFMPEG_VERSION="n7.1.1"
 RUN wget https://github.com/FFmpeg/FFmpeg/archive/refs/tags/${FFMPEG_VERSION}.tar.gz -O /tmp/FFmpeg-${FFMPEG_VERSION}.tar.gz && \
     tar -xzf /tmp/FFmpeg-${FFMPEG_VERSION}.tar.gz -C /tmp/ && \
     cd /tmp/FFmpeg-${FFMPEG_VERSION} && \
@@ -243,32 +215,43 @@ RUN wget https://github.com/FFmpeg/FFmpeg/archive/refs/tags/${FFMPEG_VERSION}.ta
     rm -rf /tmp/FFmpeg-${FFMPEG_VERSION} /tmp/FFmpeg-${FFMPEG_VERSION}.tar.gz
 
 
+############################################
+#  Installing GO
+############################################
+RUN wget -q "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -O /tmp/go.tar.gz && \
+    rm -rf /usr/local/go && \
+    tar -C /usr/local -xzf /tmp/go.tar.gz && \
+    rm /tmp/go.tar.gz
+ENV PATH="/usr/local/go/bin:${PATH:-}"
+
+
 ###################################
 # Building Qt
 ###################################
 ENV LLVM_INSTALL_DIR="/usr/lib/llvm-${LLVM_VERSION}"
 ENV CMAKE_PREFIX_PATH="${LLVM_INSTALL_DIR}"
 
-ENV QT="6.8.2"
-ENV QT_DIR="/opt/Qt/${QT}"
+ENV QT_DIR="/opt/Qt/${QT_VERSION}"
 
 # Install Qt manually using the specified version
-RUN wget "https://download.qt.io/official_releases/qt/6.8/${QT}/single/qt-everywhere-src-${QT}.tar.xz" -O /tmp/qt-everywhere-src-${QT}.tar.xz && \
-    tar -xJf /tmp/qt-everywhere-src-${QT}.tar.xz -C /tmp/ && \
-    rm -rf /tmp/qt-everywhere-src-${QT}.tar.xz
+RUN wget "https://download.qt.io/official_releases/qt/${QT_VERSION%.*}/${QT_VERSION}/single/qt-everywhere-src-${QT_VERSION}.tar.xz" -O /tmp/qt-everywhere-src-${QT_VERSION}.tar.xz && \
+    tar -xJf /tmp/qt-everywhere-src-${QT_VERSION}.tar.xz -C /tmp/ && \
+    rm -rf /tmp/qt-everywhere-src-${QT_VERSION}.tar.xz
 
-RUN mkdir -p /tmp/qt-everywhere-src-${QT}/build && \
-    cd /tmp/qt-everywhere-src-${QT}/build && \
-    /tmp/qt-everywhere-src-${QT}/configure -prefix ${QT_DIR} -release -opensource -confirm-license -nomake tests -nomake examples -skip qtopcua && \
+RUN mkdir -p /tmp/qt-everywhere-src-${QT_VERSION}/build && \
+    cd /tmp/qt-everywhere-src-${QT_VERSION}/build && \
+    /tmp/qt-everywhere-src-${QT_VERSION}/configure -prefix ${QT_DIR} -release -opensource -confirm-license -nomake tests -nomake examples -skip qtopcua -skip qtwebengine && \
     cmake --build . --parallel $(nproc) && \
     cmake --install . && \
     cd / && \
-    rm -rf /tmp/qt-everywhere-src-${QT}
+    rm -rf /tmp/qt-everywhere-src-${QT_VERSION}
 
 
 ###################################
 # Building QtCreator
 ###################################
+ENV CC="gcc"
+ENV CXX="g++"
 # Set GCC-14.2 as default compiler
 RUN update-alternatives --install /usr/bin/gcc gcc ${LIBRARY_PATH}/gcc-${GCC_VERSION}/bin/gcc 100 && \
     update-alternatives --install /usr/bin/g++ g++ ${LIBRARY_PATH}/gcc-${GCC_VERSION}/bin/g++ 100 && \
@@ -278,57 +261,62 @@ RUN update-alternatives --install /usr/bin/gcc gcc ${LIBRARY_PATH}/gcc-${GCC_VER
 ENV CMAKE_PREFIX_PATH="${QT_DIR}/gcc_64:${QT_DIR}/lib:${QT_DIR}/lib/cmake:${QT_DIR}/lib/cmake/Qt6:${CMAKE_PREFIX_PATH}"
 
 # Download Qt Creator source and build using CMake and Ninja
-ENV QTCREATOR_VERSION="15.0.1"
 ENV QTCREATOR="/opt/QtCreator"
 
-RUN wget "https://download.qt.io/official_releases/qtcreator/15.0/${QTCREATOR_VERSION}/qt-creator-opensource-src-${QTCREATOR_VERSION}.tar.xz" -O /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}.tar.xz && \
+RUN wget "https://download.qt.io/official_releases/qtcreator/${QTCREATOR_VERSION%.*}/${QTCREATOR_VERSION}/qt-creator-opensource-src-${QTCREATOR_VERSION}.tar.xz" -O /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}.tar.xz && \
     tar -xJf /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}.tar.xz -C /tmp/ && \
     rm -rf /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}.tar.xz
 
 RUN cmake -S /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION} -B /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}/build -DCMAKE_INSTALL_PREFIX=${QTCREATOR} \
-        -DCMAKE_INSTALL_PREFIX=${QTCREATOR} -DCMAKE_BUILD_TYPE=Debug -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=${QTCREATOR} -DCMAKE_BUILD_TYPE=Release -G Ninja \
         -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" && \
-    cmake --build /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}/build --parallel $(nproc) --verbose --target install && \
+    cmake --build /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}/build --parallel 2 --verbose --target install && \
     rm -rf /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION}
 
 
 ##################################################
 #  CUDA & CUDNN drivers and toolkit installation
 ##################################################
-ENV CUDA_VERSION="12.8.0"
-RUN wget "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin" && \
-    mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
-    wget "https://developer.download.nvidia.com/compute/cuda/${CUDA_VERSION}/local_installers/cuda-repo-ubuntu2004-12-8-local_${CUDA_VERSION}-570.86.10-1_amd64.deb"
+RUN wget -q "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin" && \
+    mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
+    wget -q "https://developer.download.nvidia.com/compute/cuda/${CUDA_VERSION}/local_installers/cuda-repo-ubuntu2204-${CUDA_VERSION%.*}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}_amd64.deb" && \
+    dpkg -i cuda-repo-ubuntu2204-${CUDA_VERSION%.*}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}_amd64.deb && \
+    cp /var/cuda-repo-ubuntu2204-${CUDA_VERSION%.*}-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends cuda-toolkit-${CUDA_VERSION%.*} cuda-drivers && \
+    rm -f cuda-repo-ubuntu2204-${CUDA_VERSION%.*}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}_amd64.deb && \
+    rm -f /etc/apt/sources.list.d/cuda-ubuntu2204-${CUDA_VERSION%.*}-local.list && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cuda-repo-ubuntu2204-${CUDA_VERSION%.*}-local
 
-RUN dpkg -i cuda-repo-ubuntu2004-12-8-local_${CUDA_VERSION}-570.86.10-1_amd64.deb && \
-    cp /var/cuda-repo-ubuntu2004-12-8-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
-    apt-get update && apt-get -y install cuda-toolkit-12-8 cuda-drivers && \
-    rm cuda-repo-ubuntu2004-12-8-local_${CUDA_VERSION}-570.86.10-1_amd64.deb /etc/apt/sources.list.d/cuda-ubuntu2004-12-8-local.list && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cuda-repo-ubuntu2004-12-8-local
-
-ENV CUDNN_VERSION="9.8.0"
-RUN wget "https://developer.download.nvidia.com/compute/cudnn/${CUDNN_VERSION}/local_installers/cudnn-local-repo-ubuntu2004-${CUDNN_VERSION}_1.0-1_amd64.deb"
-RUN dpkg -i cudnn-local-repo-ubuntu2004-${CUDNN_VERSION}_1.0-1_amd64.deb && \
-    cp /var/cudnn-local-repo-ubuntu2004-${CUDNN_VERSION}/cudnn-*-keyring.gpg /usr/share/keyrings/
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        cudnn \
-        cudnn-cuda-12
-RUN rm -f cudnn-local-repo-ubuntu2004-${CUDNN_VERSION}_1.0-1_amd64.deb && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cudnn-local-repo-ubuntu200
-
-
-###################################
-# Final CleanUp
-###################################
-RUN apt-get clean && apt-get autoremove -y
+# cuDNN installation
+RUN wget -q "https://developer.download.nvidia.com/compute/cudnn/${CUDNN_VERSION}/local_installers/cudnn-local-repo-ubuntu2204-${CUDNN_VERSION}_1.0-1_amd64.deb" && \
+    dpkg -i cudnn-local-repo-ubuntu2204-${CUDNN_VERSION}_1.0-1_amd64.deb && \
+    cp /var/cudnn-local-repo-ubuntu2204-${CUDNN_VERSION}/cudnn-*-keyring.gpg /usr/share/keyrings/ && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends cudnn cudnn-cuda-12 && \
+    rm -f cudnn-local-repo-ubuntu2204-${CUDNN_VERSION}_1.0-1_amd64.deb && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cudnn-local-repo-ubuntu2204-${CUDNN_VERSION}
 
 
 ###################################
 # Important environment variables
 ###################################
-
-ENV PATH="${LIBRARY_PATH}/bin:${LIBRARY_PATH}/cuda:${LIBRARY_PATH}:${LIBRARY_PATH}/include:${QTCREATOR}/bin:${QT_DIR}/gcc_64/bin:${LLVM_INSTALL_DIR}/bin:${PATH}"
-ENV QT_QPA_PLATFORM_PLUGIN_PATH="${QT_DIR}/gcc_64/plugins/platforms"
-ENV LD_LIBRARY_PATH="${LIBRARY_PATH}/cuda/lib64:${QTCREATOR}/lib:${QT_DIR}/gcc_64/lib:${QT_DIR}/lib:${LLVM_INSTALL_DIR}/lib:${LIBRARY_PATH}/gcc-${GCC_VERSION}/lib64"
-ENV PKG_CONFIG_PATH="${QT_DIR}/gcc_64/lib/pkgconfig:PKG_CONFIG_PATH"
+ENV GCC_VERSION=${GCC_VERSION} \
+    LLVM_VERSION=${LLVM_VERSION} \
+    QT_VERSION=${QT_VERSION} \
+    QT_DIR=/opt/Qt/${QT_VERSION} \
+    QTCREATOR_DIR=/opt/QtCreator \
+    LLVM_INSTALL_DIR=/usr/lib/llvm-${LLVM_VERSION} \
+    LIBRARY_PATH=/usr/local \
+    # PATH configuration
+    PATH="${LIBRARY_PATH}/bin:${LIBRARY_PATH}/cuda:${LIBRARY_PATH}:${LIBRARY_PATH}/include:${QTCREATOR}/bin:${QT_DIR}/gcc_64/bin:${LLVM_INSTALL_DIR}/bin:${PATH}" \
+    # Library paths
+    LD_LIBRARY_PATH="${LIBRARY_PATH}/cuda/lib64:${QTCREATOR}/lib:${QT_DIR}/gcc_64/lib:${QT_DIR}/lib:${LLVM_INSTALL_DIR}/lib:${LIBRARY_PATH}/gcc-${GCC_VERSION}/lib64:${LD_LIBRARY_PATH:-}" \
+    # Qt specific
+    QT_QPA_PLATFORM_PLUGIN_PATH="${QT_DIR}/gcc_64/plugins/platforms" \
+    QT_PLUGIN_PATH="${QT_DIR}/plugins" \
+    PKG_CONFIG_PATH="${QT_DIR}/gcc_64/lib/pkgconfig:${QT_DIR}/lib/pkgconfig:/usr/local/ffmpeg/lib/pkgconfig:${PKG_CONFIG_PATH:-}" \
+    CMAKE_PREFIX_PATH="${QT_DIR}:${LLVM_INSTALL_DIR}" \
+    # CUDA paths
+    CUDA_HOME=${LIBRARY_PATH}/cuda \
+    CUDA_PATH=${LIBRARY_PATH}/cuda

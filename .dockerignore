@@ -1,0 +1,78 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+LICENSE
+*.md
+docs/
+
+# Docker
+docker-compose*.yml
+.dockerignore
+Dockerfile*
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build artifacts
+workspace/*/build/
+workspace/*/build-*/
+workspace/*/.cache/
+workspace/*/CMakeCache.txt
+workspace/*/CMakeFiles/
+workspace/*/cmake_install.cmake
+workspace/*/Makefile
+workspace/*/*.o
+workspace/*/*.so
+workspace/*/*.a
+workspace/*/moc_*
+workspace/*/ui_*
+workspace/*/qrc_*
+
+# Backups
+backups/
+*.tar.gz
+*.zip
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Cache
+.cache/
+__pycache__/
+*.pyc
+
+# ccache
+.ccache/
+
+# Qt Creator user files
+*.user
+*.user.*
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+azure-pipelines.yml
+
+# Package managers
+node_modules/
+vendor/
