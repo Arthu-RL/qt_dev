@@ -14,7 +14,7 @@ ARG CMAKE_VERSION=3.31.6
 ARG QT_VERSION=6.10.0
 ARG QTCREATOR_VERSION=18.0.0
 ARG FFMPEG_VERSION=n7.1.1
-ARG NVIDIA_DRIVER=575.57.08
+ARG NVIDIA_DRIVER=570.86.10
 ARG CUDA_VERSION=12.8.0
 ARG CUDNN_VERSION=9.8.0
 ARG GO_VERSION=1.25.3
@@ -277,16 +277,18 @@ RUN cmake -S /tmp/qt-creator-opensource-src-${QTCREATOR_VERSION} -B /tmp/qt-crea
 ##################################################
 #  CUDA & CUDNN drivers and toolkit installation
 ##################################################
-RUN wget -q "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin" && \
+ENV CUDA_SHORT=${CUDA_VERSION%.*}
+ENV CUDA_SHORT_HYPHEN=${CUDA_SHORT//./-}
+RUN wget "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin" && \
     mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
-    wget -q "https://developer.download.nvidia.com/compute/cuda/${CUDA_VERSION}/local_installers/cuda-repo-ubuntu2204-${CUDA_VERSION%.*}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}_amd64.deb" && \
-    dpkg -i cuda-repo-ubuntu2204-${CUDA_VERSION%.*}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}_amd64.deb && \
-    cp /var/cuda-repo-ubuntu2204-${CUDA_VERSION%.*}-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
+    wget "https://developer.download.nvidia.com/compute/cuda/${CUDA_VERSION}/local_installers/cuda-repo-ubuntu2204-${CUDA_SHORT_HYPHEN}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}-1_amd64.deb"
+RUN dpkg -i cuda-repo-ubuntu2204-${CUDA_SHORT_HYPHEN}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}-1_amd64.deb && \
+    cp /var/cuda-repo-ubuntu2204-${CUDA_SHORT_HYPHEN}-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
     apt-get update && \
-    apt-get install -y --no-install-recommends cuda-toolkit-${CUDA_VERSION%.*} cuda-drivers && \
-    rm -f cuda-repo-ubuntu2204-${CUDA_VERSION%.*}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}_amd64.deb && \
-    rm -f /etc/apt/sources.list.d/cuda-ubuntu2204-${CUDA_VERSION%.*}-local.list && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cuda-repo-ubuntu2204-${CUDA_VERSION%.*}-local
+    apt-get install -y --no-install-recommends cuda-toolkit-${CUDA_SHORT} cuda-drivers && \
+    rm -f cuda-repo-ubuntu2204-${CUDA_SHORT_HYPHEN}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}-1_amd64.deb && \
+    rm -f /etc/apt/sources.list.d/cuda-ubuntu2204-${CUDA_SHORT_HYPHEN}-local.list && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cuda-repo-ubuntu2204-${CUDA_SHORT_HYPHEN}-local
 
 # cuDNN installation
 RUN wget -q "https://developer.download.nvidia.com/compute/cudnn/${CUDNN_VERSION}/local_installers/cudnn-local-repo-ubuntu2204-${CUDNN_VERSION}_1.0-1_amd64.deb" && \
