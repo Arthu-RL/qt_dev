@@ -31,7 +31,10 @@ ENV VULKAN_SDK_VERSION="1.4.328.1"
 RUN mkdir -p ${LIBRARY_PATH}/VulkanSDK && \
     wget -qO - "https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz" | \
     tar -xJf - -C ${LIBRARY_PATH}/VulkanSDK
-
+# vk env
+ENV VULKAN_ROOT="${LIBRARY_PATH}/VulkanSDK/${VULKAN_SDK_VERSION}"
+RUN chmod +x ${VULKAN_ROOT}/setup-env.sh && \
+    echo "source ${VULKAN_ROOT}/setup-env.sh" >> ~/.bashrc
 
 # Download and install GLFW from source
 ENV GLFW_VERSION="3.4"
@@ -170,6 +173,31 @@ RUN cd /tmp && \
     cmake --build /tmp/libink/build --target install --parallel $(nproc) && \
     rm -rf /tmp/libink
 
+# Some libs for opencv
+RUN apt-get update --allow-unauthenticated && \
+    apt-get install -y --no-install-recommends \
+    # DBus e GLib
+    libglib2.0-0 libdbus-1-3 \
+    # OpenGL
+    libgl1-mesa-glx libgl1-mesa-dri libglu1-mesa \
+    libegl1 libglx0 \
+    # GStreamer - Importante para player de video Galeria
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    gstreamer1.0-tools \
+    gstreamer1.0-alsa \
+    gstreamer1.0-pulseaudio \
+    libgstreamer1.0-0 \
+    libgstreamer-plugins-base1.0-0 \
+    libgstreamer-plugins-bad1.0-0 \
+    # Áudio
+    libpulse0 libpulse-mainloop-glib0 libasound2 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    # Remover docs, man pages e locales
+    && rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/*
 
 ENV OPENCV_VERSION="4.12.0"
 RUN cd /tmp && \
@@ -190,13 +218,11 @@ RUN cmake -S /tmp/opencv -B /tmp/opencv/build \
         -DBUILD_EXAMPLES=OFF \
         -DWITH_TBB=ON \
         -DTBB_DIR=${LIBRARY_PATH}/lib/cmake/TBB \
-        # -DWITH_CUDA=ON \
-        # -DCUDA_TOOLKIT_ROOT_DIR=${LIBRARY_PATH}/cuda \
-        # -DCMAKE_CUDA_ARCHITECTURES="61;70;75;80;86" \
-        # -DOPENCV_DNN_CUDA=ON \
-        # -DWITH_CUDNN=ON \
-        # -DCUDNN_LIBRARY=${LIBRARY_PATH}/tensorrt/lib/libcudnn.so \
-        # -DCUDNN_INCLUDE_DIR=${LIBRARY_PATH}/cuda/include \
+        -DWITH_CUDA=ON \
+        -DCUDA_TOOLKIT_ROOT_DIR=${LIBRARY_PATH}/cuda \
+        -DCMAKE_CUDA_ARCHITECTURES="61;70;75;80;86" \
+        -DOPENCV_DNN_CUDA=ON \
+        -DWITH_CUDNN=ON \
         -DCMAKE_CXX_STANDARD=17 \
         -DBUILD_TESTS=OFF \
         -DBUILD_PERF_TESTS=OFF && \
@@ -232,13 +258,8 @@ RUN cmake -S /tmp/TensorRT -B /tmp/TensorRT/build \
     rm -rf /tmp/TensorRT
 
 ############################################
-# Important environment variables set up
+# Environment set up
 ############################################
-ENV VULKAN_ROOT="${LIBRARY_PATH}/VulkanSDK/${VULKAN_SDK_VERSION}"
-RUN chmod +x ${VULKAN_ROOT}/setup-env.sh && \
-    echo "source ${VULKAN_ROOT}/setup-env.sh" >> ~/.bashrc
-
-# Set include paths for compilation
 ENV CPLUS_INCLUDE_PATH="${LIBRARY_PATH}/include:${LIBRARY_PATH}/tensorrt/include:${LIBRARY_PATH}/cuda/include"
 ENV LD_LIBRARY_PATH="${LIBRARY_PATH}/lib:${LIBRARY_PATH}/tensorrt/lib:${LIBRARY_PATH}/cuda/lib64:${LD_LIBRARY_PATH}"
 ENV PATH="${LIBRARY_PATH}/cuda/bin:${LIBRARY_PATH}/tensorrt/bin:${PATH}"

@@ -87,13 +87,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libx11-dev libxext-dev libxrender-dev libxrandr-dev \
     libxi-dev libxkbcommon-dev libxkbcommon-x11-dev \
     libfontconfig1-dev libfreetype6-dev libsm6 libice6 \
-    libx11-xcb1 libxrender1 libxext6 libxi6 \
-    x11-xserver-utils xorg-dev xterm \
+    libx11-xcb1 libxrender1 libxext6 libxi6 libxcomposite1 \
+    x11-xserver-utils xorg-dev xterm libx11-6 libxtst6 \
     libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev \
     libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev \
     libxcb-sync0-dev libxcb-xfixes0-dev libxcb-shape0-dev \
+    libxcb-util1 libxcursor1 libxrandr2 \
     libxcb-randr0-dev libxcb-render-util0-dev libxcb-xinerama0-dev \
-    libxcb-cursor-dev libxkbcommon-x11-0 \
+    libxcb-cursor-dev libxkbcommon-x11-0 libxdamage1 \
     libwayland-dev wayland-protocols \
 
     # Graphics, OpenGL, Vulkan, and GPU Interfaces
@@ -146,20 +147,11 @@ ENV PATH="${LIBRARY_PATH}/bin:${PATH:-}"
 ###################################
 # C++ configs
 ###################################
-RUN wget -q "https://github.com/gcc-mirror/gcc/archive/refs/tags/releases/gcc-${GCC_VERSION}.tar.gz" -O /tmp/gcc.tar.gz && \
-    tar -xzf /tmp/gcc.tar.gz -C /tmp/ && \
-    rm -f /tmp/gcc.tar.gz
-
-# Create a separate build directory and compile GCC
-RUN mkdir -p /tmp/gcc-build && cd /tmp/gcc-build && \
-    /tmp/gcc-releases-gcc-${GCC_VERSION}/configure \
-        --prefix="${LIBRARY_PATH}/gcc-${GCC_VERSION}" \
-        --enable-languages="c,c++" \
-        --disable-multilib && \
-    make -j$(nproc) && \
-    make install && \
-    cd / && \
-    rm -rf /tmp/gcc-releases-gcc-${GCC_VERSION} /tmp/gcc-build
+RUN apt-get update && \
+    apt-get install -y gcc-12 g++-12 && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 60 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 60 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
 ###################################
@@ -187,17 +179,8 @@ RUN mv /tmp/ninja ${LIBRARY_PATH}/bin
 ############################################
 #  Installing CMake (newer version)
 ############################################
-RUN wget "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz" -O /tmp/cmake-${CMAKE_VERSION}.tar.gz && \
-    tar -xzvf /tmp/cmake-${CMAKE_VERSION}.tar.gz -C /tmp/ && \
-    rm -rf /tmp/cmake-${CMAKE_VERSION}.tar.gz
-
-RUN mkdir /tmp/cmake-${CMAKE_VERSION}/build && \
-    cd /tmp/cmake-${CMAKE_VERSION}/build && \
-    ../bootstrap && \
-    make -j$(nproc) && \
-    make install && \
-    cd / && \
-    rm -rf /tmp/cmake-${CMAKE_VERSION}
+RUN wget -qO- "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz" \
+    | tar --strip-components=1 -xz -C ${LIBRARY_PATH}
 
 
 ############################################
@@ -240,7 +223,8 @@ RUN wget "https://download.qt.io/official_releases/qt/${QT_VERSION%.*}/${QT_VERS
 
 RUN mkdir -p /tmp/qt-everywhere-src-${QT_VERSION}/build && \
     cd /tmp/qt-everywhere-src-${QT_VERSION}/build && \
-    /tmp/qt-everywhere-src-${QT_VERSION}/configure -prefix ${QT_DIR} -release -opensource -confirm-license -nomake tests -nomake examples -skip qtopcua -skip qtwebengine && \
+    /tmp/qt-everywhere-src-${QT_VERSION}/configure -prefix ${QT_DIR} -release -opensource -confirm-license \
+    -nomake tests -nomake examples -skip qtopcua -skip qtwebengine && \
     cmake --build . --parallel $(nproc) && \
     cmake --install . && \
     cd / && \
@@ -250,14 +234,6 @@ RUN mkdir -p /tmp/qt-everywhere-src-${QT_VERSION}/build && \
 ###################################
 # Building QtCreator
 ###################################
-ENV CC="gcc"
-ENV CXX="g++"
-# Set GCC-14.2 as default compiler
-RUN update-alternatives --install /usr/bin/gcc gcc ${LIBRARY_PATH}/gcc-${GCC_VERSION}/bin/gcc 100 && \
-    update-alternatives --install /usr/bin/g++ g++ ${LIBRARY_PATH}/gcc-${GCC_VERSION}/bin/g++ 100 && \
-    update-alternatives --set gcc ${LIBRARY_PATH}/gcc-${GCC_VERSION}/bin/gcc && \
-    update-alternatives --set g++ ${LIBRARY_PATH}/gcc-${GCC_VERSION}/bin/g++ 
-
 ENV CMAKE_PREFIX_PATH="${QT_DIR}/gcc_64:${QT_DIR}/lib:${QT_DIR}/lib/cmake:${QT_DIR}/lib/cmake/Qt6:${CMAKE_PREFIX_PATH}"
 
 # Download Qt Creator source and build using CMake and Ninja
@@ -313,15 +289,13 @@ ENV GCC_VERSION=${GCC_VERSION} \
     QTCREATOR_DIR=/opt/QtCreator \
     LLVM_INSTALL_DIR=/usr/lib/llvm-${LLVM_VERSION} \
     LIBRARY_PATH=/usr/local \
-    # PATH configuration
-    PATH="${LIBRARY_PATH}/bin:${LIBRARY_PATH}/cuda:${LIBRARY_PATH}:${LIBRARY_PATH}/include:${QTCREATOR}/bin:${QT_DIR}/gcc_64/bin:${LLVM_INSTALL_DIR}/bin:${PATH}" \
-    # Library paths
-    LD_LIBRARY_PATH="${LIBRARY_PATH}/cuda/lib64:${QTCREATOR}/lib:${QT_DIR}/gcc_64/lib:${QT_DIR}/lib:${LLVM_INSTALL_DIR}/lib:${LIBRARY_PATH}/gcc-${GCC_VERSION}/lib64:${LD_LIBRARY_PATH:-}" \
-    # Qt specific
-    QT_QPA_PLATFORM_PLUGIN_PATH="${QT_DIR}/gcc_64/plugins/platforms" \
+    CUDA_ROOT_DIR=/usr/local/cuda-12
+
+ENV PATH="${LIBRARY_PATH}/bin:${CUDA_ROOT_DIR}/bin:${QTCREATOR_DIR}/bin:${QT_DIR}/bin:${LLVM_INSTALL_DIR}/bin:${PATH}" \
+    LD_LIBRARY_PATH="${LIBRARY_PATH}/lib:${CUDA_ROOT_DIR}/lib64:${QTCREATOR_DIR}/lib:${QT_DIR}/lib:${LLVM_INSTALL_DIR}/lib:${LIBRARY_PATH}/gcc-${GCC_VERSION}/lib64:${LD_LIBRARY_PATH:-}" \
+    QT_QPA_PLATFORM_PLUGIN_PATH="${QT_DIR}/plugins/platforms" \
     QT_PLUGIN_PATH="${QT_DIR}/plugins" \
-    PKG_CONFIG_PATH="${QT_DIR}/gcc_64/lib/pkgconfig:${QT_DIR}/lib/pkgconfig:/usr/local/ffmpeg/lib/pkgconfig:${PKG_CONFIG_PATH:-}" \
+    PKG_CONFIG_PATH="${QT_DIR}/lib/pkgconfig:/usr/local/ffmpeg/lib/pkgconfig:${PKG_CONFIG_PATH:-}" \
     CMAKE_PREFIX_PATH="${QT_DIR}:${LLVM_INSTALL_DIR}" \
-    # CUDA paths
-    CUDA_HOME=${LIBRARY_PATH}/cuda \
-    CUDA_PATH=${LIBRARY_PATH}/cuda
+    CUDA_HOME=${CUDA_ROOT_DIR} \
+    CUDA_PATH=${CUDA_ROOT_DIR}
