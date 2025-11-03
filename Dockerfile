@@ -20,8 +20,14 @@ WORKDIR /workspace
 # Set up all Libraries
 ###################################
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-pip python3-dev \
+    libprotobuf-dev protobuf-compiler \
+    libonnx-dev pybind11-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 # Set up Vulkan SDK
-ENV VULKAN_SDK_VERSION="1.4.304.1"
+ENV VULKAN_SDK_VERSION="1.4.328.1"
 RUN mkdir -p ${LIBRARY_PATH}/VulkanSDK && \
     wget -qO - "https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz" | \
     tar -xJf - -C ${LIBRARY_PATH}/VulkanSDK
@@ -55,34 +61,24 @@ RUN cd /tmp && \
 	cmake --build /tmp/SDL_ttf/build --target install --parallel $(nproc) && \
 	rm -rf /tmp/SDL_ttf
 
+# Gerar arquivos GLAD (OpenGL 4.6) para C/C++
+RUN pip install glad && \
+    python3 -m glad --generator=c --api="gl=4.6" --out-path=/tmp/glad
 
-# Download and install GLAD-generated files (OpenGL)
-RUN pip3 install --upgrade "git+https://github.com/dav1dde/glad.git#egg=glad" && \
-    python3 -m glad --api="gl:core=4.6" --out-path=/tmp/glad
-
-RUN mkdir -p ${LIBRARY_PATH}/src/glad && \
+# Criar pastas e mover arquivos
+RUN mkdir -p ${LIBRARY_PATH}/lib ${LIBRARY_PATH}/include ${LIBRARY_PATH}/src/glad && \
     mv /tmp/glad/include/glad ${LIBRARY_PATH}/include/ && \
     mv /tmp/glad/src/* ${LIBRARY_PATH}/src/glad/ && \
     rm -rf /tmp/glad
 
 # Build BOTH static and shared GLAD libraries with PIC support
 RUN cd ${LIBRARY_PATH}/src/glad && \
-    echo "Building GLAD libraries with PIC support..." && \
-    \
-    # Build static library (with -fPIC for shared compatibility)
-    gcc -fPIC -c gl.c -o glad.o && \
+    g++ -fPIC -I${LIBRARY_PATH}/include -c glad.c -o glad.o && \
     ar rcs ${LIBRARY_PATH}/lib/libglad.a glad.o && \
-    \
-    # Build shared library
-    gcc -shared -fPIC gl.c -o ${LIBRARY_PATH}/lib/libglad.so.1.0.0 && \
+    g++ -shared -fPIC glad.c -o ${LIBRARY_PATH}/lib/libglad.so.1.0.0 && \
     ln -sf libglad.so.1.0.0 ${LIBRARY_PATH}/lib/libglad.so.1 && \
     ln -sf libglad.so.1 ${LIBRARY_PATH}/lib/libglad.so && \
-    \
-    # Cleanup and verify
-    rm glad.o && \
-    echo "✓ Static GLAD:  $(file ${LIBRARY_PATH}/lib/libglad.a)" && \
-    echo "✓ Shared GLAD:  $(file ${LIBRARY_PATH}/lib/libglad.so)" && \
-    ls -la ${LIBRARY_PATH}/lib/libglad.*
+    rm glad.o
 
 ENV DEARIMGUI_VERSION="1.91.8"
 RUN wget "https://github.com/ocornut/imgui/archive/refs/tags/v${DEARIMGUI_VERSION}.tar.gz" -O /tmp/imgui-${DEARIMGUI_VERSION}.tar.gz && \
@@ -175,53 +171,58 @@ RUN cd /tmp && \
     rm -rf /tmp/libink
 
 
+ENV OPENCV_VERSION="4.12.0"
 RUN cd /tmp && \
-    git clone "https://github.com/opencv/opencv.git" && \
-    git clone "https://github.com/opencv/opencv_contrib.git" && \
-    cmake -S /tmp/opencv -B /tmp/opencv/build \
+    wget -O opencv.zip https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VERSION}.zip && \
+    wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/refs/tags/${OPENCV_VERSION}.zip && \
+    unzip opencv.zip && \
+    unzip opencv_contrib.zip && \
+    mv opencv-${OPENCV_VERSION} opencv && \
+    mv opencv_contrib-${OPENCV_VERSION} opencv_contrib
+
+# Configure and build
+RUN cmake -S /tmp/opencv -B /tmp/opencv/build \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
         -DBUILD_SHARED_LIBS=OFF \
         -DOPENCV_EXTRA_MODULES_PATH=/tmp/opencv_contrib/modules \
         -DBUILD_opencv_python3=OFF \
-        -DBUILD_opencv_python2=OFF \
         -DBUILD_EXAMPLES=OFF \
-        -DWITH_CUDA=ON \
-        -DWITH_CUDNN=ON \
-        -DOPENCV_DNN_CUDA=ON \
-        -DWITH_OPENGL=ON \
-        -DWITH_V4L=ON \
-        -DWITH_GTK=ON \
         -DWITH_TBB=ON \
         -DTBB_DIR=${LIBRARY_PATH}/lib/cmake/TBB \
+        # -DWITH_CUDA=ON \
+        # -DCUDA_TOOLKIT_ROOT_DIR=${LIBRARY_PATH}/cuda \
+        # -DCMAKE_CUDA_ARCHITECTURES="61;70;75;80;86" \
+        # -DOPENCV_DNN_CUDA=ON \
+        # -DWITH_CUDNN=ON \
+        # -DCUDNN_LIBRARY=${LIBRARY_PATH}/tensorrt/lib/libcudnn.so \
+        # -DCUDNN_INCLUDE_DIR=${LIBRARY_PATH}/cuda/include \
+        -DCMAKE_CXX_STANDARD=17 \
         -DBUILD_TESTS=OFF \
         -DBUILD_PERF_TESTS=OFF && \
     cmake --build /tmp/opencv/build --target install --parallel $(nproc) && \
-    rm -rf /tmp/opencv /tmp/opencv_contrib
+    rm -rf /tmp/opencv /tmp/opencv_contrib /tmp/opencv.zip /tmp/opencv_contrib.zip
 
 
-ENV TENSORRT_VERSION="10.9.0"
-RUN wget "https://developer.nvidia.com/downloads/compute/machine-learning/tensorrt/${TENSORRT_VERSION}/tars/TensorRT-${TENSORRT_VERSION}.34.Linux.x86_64-gnu.cuda-12.8.tar.gz" -O /tmp/tensorrt.tar.gz
-RUN mkdir -p ${LIBRARY_PATH}/tensorrt && \
-    tar -xzf /tmp/tensorrt.tar.gz -C ${LIBRARY_PATH}/tensorrt --strip-components=1 && \
-    rm /tmp/tensorrt.tar.gz
-RUN echo "${LIBRARY_PATH}/tensorrt/lib" > /etc/ld.so.conf.d/tensorrt.conf && ldconfig
-
-
-RUN pip3 install onnx
+ENV TENSORRT_VERSION="10.13.3"
+RUN pip3 install --no-cache-dir onnx numpy
 RUN cd /tmp && \
-    git clone --recursive "https://github.com/NVIDIA/TensorRT.git" && \
-    cmake -S /tmp/TensorRT -B /tmp/TensorRT/build \
+    git clone --recursive https://github.com/NVIDIA/TensorRT.git && \
+    cd TensorRT && \
+    git checkout release/${TENSORRT_VERSION}
+
+# Compilar e instalar
+RUN cmake -S /tmp/TensorRT -B /tmp/TensorRT/build \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
         -DCUDA_TOOLKIT_ROOT_DIR=${LIBRARY_PATH}/cuda \
         -DCMAKE_CUDA_COMPILER=${LIBRARY_PATH}/cuda/bin/nvcc \
-        -DCMAKE_CUDA_ARCHITECTURES="50;52;60;61;70;75;80;86" \
+        -DCMAKE_CUDA_ARCHITECTURES="61;70;75;80;86" \
         -DTRT_LIB_DIR=${LIBRARY_PATH}/tensorrt/lib \
         -Dnvinfer_LIB_PATH=${LIBRARY_PATH}/tensorrt/lib/libnvinfer.so \
         -DTRT_BIN_DIR=${LIBRARY_PATH}/bin \
         -DBUILD_PARSERS=ON \
-        -DBUILD_PLUGINS=ON \
+        -DBUILD_PLUGINS=OFF \
         -DBUILD_SAMPLES=OFF \
         -DBUILD_TESTS=OFF \
         -DBUILD_PYTHON=OFF \
@@ -229,7 +230,6 @@ RUN cd /tmp && \
         -DONNX_NAMESPACE=onnx && \
     cmake --build /tmp/TensorRT/build --target install --parallel $(nproc) && \
     rm -rf /tmp/TensorRT
-
 
 ############################################
 # Important environment variables set up
