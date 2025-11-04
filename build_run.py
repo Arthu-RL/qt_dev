@@ -42,6 +42,7 @@ def run(project_path: str, image: str, container_name: str) -> None:
     run_command = f"""
         docker rm -f {container_name} && \
         docker run --gpus all --runtime=nvidia --privileged -d --name {container_name} \
+            --ipc=host \
             -e NVIDIA_VISIBLE_DEVICES=all \
             -e NVIDIA_DRIVER_CAPABILITIES=all \
             -e DISPLAY=$DISPLAY \
