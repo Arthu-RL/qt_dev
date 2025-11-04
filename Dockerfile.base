@@ -96,6 +96,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxcb-randr0-dev libxcb-render-util0-dev libxcb-xinerama0-dev \
     libxcb-cursor-dev libxkbcommon-x11-0 libxdamage1 \
     libwayland-dev wayland-protocols \
+    libdecor-0-0 \
 
     # Graphics, OpenGL, Vulkan, and GPU Interfaces
     libglvnd-dev libglvnd0 \

@@ -42,6 +42,8 @@ def run(project_path: str, image: str, container_name: str) -> None:
     run_command = f"""
         docker rm -f {container_name} && \
         docker run --gpus all --privileged -d --name {container_name} \
+            -e DISPLAY=$DISPLAY \
+            -v /tmp/.X11-unix:/tmp/.X11-unix \
             -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
             -e WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
             -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY \
