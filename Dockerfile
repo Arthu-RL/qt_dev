@@ -298,6 +298,19 @@ RUN cmake -S /tmp/TensorRT -B /tmp/TensorRT/build_static \
     cmake --build /tmp/TensorRT/build_static --target install --parallel $(nproc) && \
     rm -rf /tmp/TensorRT
 
+
+# JWT
+ENV JWTCPP_VERSION="0.7.1"
+RUN wget "https://github.com/Thalhammer/jwt-cpp/releases/download/v${JWTCPP_VERSION}/jwt-cpp-v${JWTCPP_VERSION}.tar.gz" -O /tmp/jwt-cpp-v${JWTCPP_VERSION}.tar.gz && \
+    mkdir -p /tmp/jwt-cpp-v${JWTCPP_VERSION} && \
+    tar -xvf /tmp/jwt-cpp-v${JWTCPP_VERSION}.tar.gz -C /tmp/jwt-cpp-v${JWTCPP_VERSION} --strip-components=1 && \
+    rm -rf /tmp/jwt-cpp-v${JWTCPP_VERSION}.tar.gz && \
+    cmake -S /tmp/jwt-cpp-v${JWTCPP_VERSION} -B /tmp/jwt-cpp-v${JWTCPP_VERSION}/build \
+        -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
+    cmake --build /tmp/jwt-cpp-v${JWTCPP_VERSION}/build --target install --parallel $(nproc) && \
+    rm -rf /tmp/jwt-cpp-v${JWTCPP_VERSION}
+
+
 ############################################
 # Environment set up
 ############################################
@@ -310,7 +323,9 @@ ENV PKG_CONFIG_PATH="${LIBRARY_PATH}/lib/pkgconfig:${LIBRARY_PATH}/lib/cmake/TBB
 ############################################
 # Clean apt
 ############################################
-RUN apt-get clean && apt-get autoremove -y
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y pkg-config libgtk-3-dev libharfbuzz-dev libcairo2-dev --install-recommends && \
+    apt-get clean && apt-get autoremove -y
 
 
 ############################################
