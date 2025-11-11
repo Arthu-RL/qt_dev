@@ -7,16 +7,15 @@ FROM ubuntu:22.04
 ###########################################
 #  Build Args
 ###########################################
-ARG GCC_VERSION=13.4.0
 ARG LLVM_VERSION=18
 ARG NINJA_VERSION=1.12.1
 ARG CMAKE_VERSION=3.31.6
 ARG QT_VERSION=6.10.0
 ARG QTCREATOR_VERSION=18.0.0
 ARG FFMPEG_VERSION=n7.1.1
-ARG NVIDIA_DRIVER=570.86.10
-ARG CUDA_VERSION=12.8.0
-ARG CUDNN_VERSION=9.8.0
+ARG NVIDIA_DRIVER=575.51.03
+ARG CUDA_VERSION=12.9.0
+ARG CUDNN_VERSION=9.9.0
 ARG GO_VERSION=1.25.3
 
 
@@ -28,6 +27,7 @@ LABEL org.opencontainers.image.version="1.0.0"
 LABEL org.opencontainers.image.description="Development environment with Qt, FFmpeg, CUDA"
 LABEL org.opencontainers.image.source="https://github.com/Arthu-RL"
 LABEL org.opencontainers.image.licenses="MIT"
+
 
 # Set non-interactive mode for apt-get installs
 ENV DEBIAN_FRONTEND=noninteractive
@@ -54,7 +54,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #########################################################
 # Base Development & Build Essentials
 #########################################################
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && \
+    apt-get install -y --install-recommends \
     # Core toolchain
     build-essential \
     ccache \
@@ -97,6 +98,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxcb-cursor-dev libxkbcommon-x11-0 libxdamage1 \
     libwayland-dev wayland-protocols \
     libdecor-0-0 \
+    libgtk-3-dev libharfbuzz-dev libcairo2-dev \
 
     # Graphics, OpenGL, Vulkan, and GPU Interfaces
     libglvnd-dev libglvnd0 \
@@ -122,6 +124,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libblas-dev liblapack-dev \
     # C++ REST SDK
     # libcpprest-dev \
+
+    # protobuf
+    libprotobuf-dev protobuf-compiler \
 
     # Misc / Useful Tools
     # Editor + assembler
@@ -258,8 +263,8 @@ ENV CUDA_SHORT=${CUDA_VERSION%.*}
 ENV CUDA_SHORT_HYPHEN=${CUDA_SHORT//./-}
 RUN wget "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin" && \
     mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
-    wget "https://developer.download.nvidia.com/compute/cuda/${CUDA_VERSION}/local_installers/cuda-repo-ubuntu2204-${CUDA_SHORT_HYPHEN}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}-1_amd64.deb"
-RUN dpkg -i cuda-repo-ubuntu2204-${CUDA_SHORT_HYPHEN}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}-1_amd64.deb && \
+    wget "https://developer.download.nvidia.com/compute/cuda/${CUDA_VERSION}/local_installers/cuda-repo-ubuntu2204-${CUDA_SHORT_HYPHEN}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}-1_amd64.deb" && \
+    dpkg -i cuda-repo-ubuntu2204-${CUDA_SHORT_HYPHEN}-local_${CUDA_VERSION}-${NVIDIA_DRIVER}-1_amd64.deb && \
     cp /var/cuda-repo-ubuntu2204-${CUDA_SHORT_HYPHEN}-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
     apt-get update && \
     apt-get install -y --no-install-recommends cuda-toolkit-${CUDA_SHORT} cuda-drivers && \
@@ -283,8 +288,7 @@ RUN wget "https://developer.download.nvidia.com/compute/cudnn/${CUDNN_VERSION}/l
 ###################################
 # Important environment variables
 ###################################
-ENV GCC_VERSION=${GCC_VERSION} \
-    LLVM_VERSION=${LLVM_VERSION} \
+ENV LLVM_VERSION=${LLVM_VERSION} \
     QT_VERSION=${QT_VERSION} \
     QT_DIR=/opt/Qt/${QT_VERSION} \
     QTCREATOR_DIR=/opt/QtCreator \
@@ -293,7 +297,7 @@ ENV GCC_VERSION=${GCC_VERSION} \
     CUDA_ROOT_DIR=/usr/local/cuda-12
 
 ENV PATH="${LIBRARY_PATH}/bin:${CUDA_ROOT_DIR}/bin:${QTCREATOR_DIR}/bin:${QT_DIR}/bin:${LLVM_INSTALL_DIR}/bin:${PATH}" \
-    LD_LIBRARY_PATH="${LIBRARY_PATH}/lib:${CUDA_ROOT_DIR}/lib64:${QTCREATOR_DIR}/lib:${QT_DIR}/lib:${LLVM_INSTALL_DIR}/lib:${LIBRARY_PATH}/gcc-${GCC_VERSION}/lib64:${LD_LIBRARY_PATH:-}" \
+    LD_LIBRARY_PATH="${LIBRARY_PATH}/lib:${CUDA_ROOT_DIR}/lib64:${QTCREATOR_DIR}/lib:${QT_DIR}/lib:${LLVM_INSTALL_DIR}/lib:${LD_LIBRARY_PATH:-}" \
     QT_QPA_PLATFORM_PLUGIN_PATH="${QT_DIR}/plugins/platforms" \
     QT_PLUGIN_PATH="${QT_DIR}/plugins" \
     PKG_CONFIG_PATH="${QT_DIR}/lib/pkgconfig:/usr/local/ffmpeg/lib/pkgconfig:${PKG_CONFIG_PATH:-}" \
