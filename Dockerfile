@@ -212,6 +212,7 @@ RUN apt-get update && \
     libglib2.0-0 libdbus-1-3 \
     libgl1-mesa-glx libgl1-mesa-dri libglu1-mesa \
     libegl1 libglx0 \
+    libjpeg-dev libjpeg-turbo8-dev \
     gstreamer1.0-plugins-base \
     gstreamer1.0-plugins-good \
     gstreamer1.0-plugins-bad \
@@ -239,21 +240,39 @@ RUN cd /tmp && \
 
 # Common OpenCV flags
 ENV OPENCV_FLAGS=" \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
-        -DOPENCV_EXTRA_MODULES_PATH=/tmp/opencv_contrib/modules \
-        -DBUILD_opencv_python3=OFF \
-        -DBUILD_EXAMPLES=OFF \
-        -DWITH_TBB=ON \
-        -DTBB_DIR=${LIBRARY_PATH}/lib/cmake/TBB \
-        -DWITH_CUDA=ON \
-        -DCUDA_TOOLKIT_ROOT_DIR=${LIBRARY_PATH}/cuda \
-        -DCMAKE_CUDA_ARCHITECTURES=61;70;75;80;86;89 \
-        -DOPENCV_DNN_CUDA=ON \
-        -DWITH_CUDNN=ON \
-        -DCMAKE_CXX_STANDARD=17 \
-        -DBUILD_TESTS=OFF \
-        -DBUILD_PERF_TESTS=OFF"
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
+    -DOPENCV_EXTRA_MODULES_PATH=/tmp/opencv_contrib/modules \
+    -DBUILD_opencv_python3=OFF \
+    -DBUILD_EXAMPLES=OFF \
+    -DWITH_TBB=ON \
+    -DTBB_DIR=${LIBRARY_PATH}/lib/cmake/TBB \
+    -DWITH_CUDA=ON \
+    -DCUDA_TOOLKIT_ROOT_DIR=${LIBRARY_PATH}/cuda \
+    -DCMAKE_CUDA_ARCHITECTURES=61;70;75;80;86;89 \
+    -DOPENCV_DNN_CUDA=ON \
+    -DWITH_CUDNN=ON \
+    -DCMAKE_CXX_STANDARD=17 \
+    -DWITH_JPEG=ON \
+    -DBUILD_JPEG=ON \
+    -DWITH_PNG=ON \
+    -DBUILD_PNG=ON \
+    -DWITH_TIFF=ON \
+    -DBUILD_TIFF=ON \
+    -DWITH_WEBP=ON \
+    -DBUILD_WEBP=ON \
+    -DWITH_OPENEXR=ON \
+    -DBUILD_OPENEXR=ON \
+    -DWITH_JASPER=ON \
+    -DBUILD_JASPER=ON \
+    -DBUILD_ZLIB=ON \
+    -DBUILD_PROTOBUF=ON \
+    -DBUILD_IPP_IW=ON \
+    -DBUILD_ITT=ON \
+    -DBUILD_TESTS=OFF \
+    -DBUILD_PERF_TESTS=OFF \
+    -DWITH_1394=OFF \
+    -DWITH_V4L=OFF"
 
 # Build SHARED
 # RUN cmake -S /tmp/opencv -B /tmp/opencv/build_shared \
