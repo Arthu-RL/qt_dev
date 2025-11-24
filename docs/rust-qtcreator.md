@@ -74,7 +74,7 @@ To enable breakpoints and variable inspection, you must register LLDB and assign
 
 **3.2 Assign to Kit**
 
-1.  Switch to the **Kits** tab (next to Debuggers).
+1.  Switch to the **Kits**, go to **manage kits**.
 2.  Select your active Kit (e.g., "Desktop").
 3.  Locate the **Debugger** field.
 4.  Select **Rust LLDB** from the dropdown menu.
