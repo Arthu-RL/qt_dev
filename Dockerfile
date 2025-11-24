@@ -25,6 +25,9 @@ RUN apt-get update && \
     libonnx-dev pybind11-dev && \
     rm -rf /var/lib/apt/lists/*
 
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
 # Set up Vulkan SDK
 ENV VULKAN_SDK_VERSION="1.4.328.1"
 RUN mkdir -p ${LIBRARY_PATH}/VulkanSDK && \
