@@ -9,6 +9,10 @@ FROM arthurrl/vulkan-dev:base
 ############################################
 WORKDIR /workspace
 
+RUN mkdir -p /home/developer
+ENV HOME=/home/developer
+WORKDIR /home/developer
+
 
 ###########################################
 #  Build Args
@@ -332,6 +336,22 @@ RUN cmake -S /tmp/TensorRT -B /tmp/TensorRT/build_static \
     cmake --build /tmp/TensorRT/build_static --target install --parallel $(nproc) && \
     rm -rf /tmp/TensorRT
 
+# WASM
+# RUN cd /opt && \
+#     git clone https://github.com/emscripten-core/emsdk.git && \
+#     cd emsdk && \
+#     git checkout 4.0.21 && \
+#     ./emsdk install 4.0.21 && \
+#     ./emsdk activate 4.0.21
+
+# ENV EMSDK="/opt/emsdk"
+# ENV EM_CONFIG="/opt/emsdk/.emscripten"
+# ENV PATH="${EMSDK}/upstream/emscripten:${PATH}"
+
+# EZSH
+RUN git clone https://github.com/jotyGill/ezsh && \
+    cd ezsh && \
+    ./install.sh -c
 
 ############################################
 # Environment set up
@@ -356,7 +376,7 @@ RUN mkdir -p /app
 COPY ./monitor.py /app/monitor.py
 
 # Default shell for interactive debugging (optional)
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/zsh", "-c"]
 
 # Run the Python script
 ENTRYPOINT ["python3", "-u", "/app/monitor.py"]
