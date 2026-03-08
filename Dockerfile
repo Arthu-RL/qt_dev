@@ -15,10 +15,9 @@ WORKDIR /home/developer
 
 
 ###########################################
-#  Build Args
+#  ENV & Build Args
 ###########################################
-# Empty
-
+ENV LIBRARY_PATH="/usr/local"
 
 ###################################
 # Set up all Libraries
@@ -33,7 +32,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Set up Vulkan SDK
-ENV VULKAN_SDK_VERSION="1.4.328.1"
+ENV VULKAN_SDK_VERSION="1.4.341.1"
 RUN mkdir -p ${LIBRARY_PATH}/VulkanSDK && \
     wget -qO - "https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz" | \
     tar -xJf - -C ${LIBRARY_PATH}/VulkanSDK
@@ -105,26 +104,26 @@ RUN cd ${LIBRARY_PATH}/src/glad && \
     rm glad.o
 
 # DearImGui, PLOG, GLM, Nlohmann JSON are header-only
-ENV DEARIMGUI_VERSION="1.92.4"
+ENV DEARIMGUI_VERSION="1.92.6"
 RUN wget "https://github.com/ocornut/imgui/archive/refs/tags/v${DEARIMGUI_VERSION}.tar.gz" -O /tmp/imgui-${DEARIMGUI_VERSION}.tar.gz && \
     tar -xzf /tmp/imgui-${DEARIMGUI_VERSION}.tar.gz -C /tmp/ && \
     rm /tmp/imgui-${DEARIMGUI_VERSION}.tar.gz
 RUN mkdir -p ${LIBRARY_PATH}/include/imgui && \
     mv /tmp/imgui-${DEARIMGUI_VERSION}/* ${LIBRARY_PATH}/include/imgui/ && \
     rm -rf /tmp/imgui-${DEARIMGUI_VERSION}
-ENV PLOG_VERSION="1.1.10"
+ENV PLOG_VERSION="1.1.11"
 RUN wget "https://github.com/SergiusTheBest/plog/archive/refs/tags/${PLOG_VERSION}.tar.gz" -O /tmp/plog-${PLOG_VERSION}.tar.gz && \
     tar -xzf /tmp/plog-${PLOG_VERSION}.tar.gz -C /tmp/ && \
     rm /tmp/plog-${PLOG_VERSION}.tar.gz
 RUN mv /tmp/plog-${PLOG_VERSION}/include/* ${LIBRARY_PATH}/include/ && \
     rm -rf /tmp/plog-${PLOG_VERSION}
-ENV GLM_VERSION="1.0.1"
+ENV GLM_VERSION="1.0.3"
 RUN wget "https://github.com/g-truc/glm/archive/refs/tags/${GLM_VERSION}.tar.gz" -O /tmp/glm-${GLM_VERSION}.tar.gz && \
     tar -xzf /tmp/glm-${GLM_VERSION}.tar.gz -C /tmp/ && \
     rm /tmp/glm-${GLM_VERSION}.tar.gz
 RUN mv /tmp/glm-${GLM_VERSION}/glm ${LIBRARY_PATH}/include && \
     rm -rf /tmp/glm-${GLM_VERSION}
-ENV NLOHMANN_JSON="3.11.3"
+ENV NLOHMANN_JSON="3.12.0"
 RUN wget "https://github.com/nlohmann/json/releases/download/v${NLOHMANN_JSON}/json.tar.xz" -O /tmp/json.tar.xz && \
     tar -xf /tmp/json.tar.xz -C /tmp/ && \
     rm /tmp/json.tar.xz
@@ -132,7 +131,7 @@ RUN mv /tmp/json/include/* ${LIBRARY_PATH}/include/ && \
     rm -rf /tmp/json
 
 # C3C is a pre-built compiler
-ENV C3C_VERSION="0.7.7"
+ENV C3C_VERSION="0.7.10"
 RUN wget -q "https://github.com/c3lang/c3c/releases/download/v${C3C_VERSION}/c3-linux.tar.gz" -O /tmp/c3-linux.tar.gz && \
     tar -xzf /tmp/c3-linux.tar.gz -C /tmp/ && \
     rm /tmp/c3-linux.tar.gz
@@ -142,7 +141,7 @@ RUN mv /tmp/c3/lib/* ${LIBRARY_PATH}/lib && \
 
 
 # Build SQLITE lib from source
-ENV SQLITECPP_VERSION="3.3.2"
+ENV SQLITECPP_VERSION="3.3.3"
 RUN wget -q "https://github.com/SRombauts/SQLiteCpp/archive/refs/tags/${SQLITECPP_VERSION}.tar.gz" -O /tmp/SQLiteCpp-${SQLITECPP_VERSION}.tar.gz && \
     tar -xzf /tmp/SQLiteCpp-${SQLITECPP_VERSION}.tar.gz -C /tmp/ && \
     rm -rf /tmp/SQLiteCpp-${SQLITECPP_VERSION}.tar.gz && \
@@ -191,18 +190,18 @@ RUN cd /tmp && \
     cmake --build /tmp/libink/build --target install --parallel $(nproc) && \
     rm -rf /tmp/libink
 
-# libwma
-RUN cd /tmp && \
-    git clone "https://github.com/Arthu-RL/libwma.git" && \
-    cmake -S /tmp/libwma -B /tmp/libwma/build \ 
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
-    cmake --build /tmp/libwma/build --target install --parallel $(nproc) && \
-    rm -rf /tmp/libwma
+# libwma commented now, but it will be descomented soon
+# RUN cd /tmp && \
+#     git clone "https://github.com/Arthu-RL/libwma.git" && \
+#     cmake -S /tmp/libwma -B /tmp/libwma/build \ 
+#         -DCMAKE_BUILD_TYPE=Release \
+#         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
+#     cmake --build /tmp/libwma/build --target install --parallel $(nproc) && \
+#     rm -rf /tmp/libwma
 
     
 # JWT
-ENV JWTCPP_VERSION="0.7.1"
+ENV JWTCPP_VERSION="0.7.2"
 RUN wget "https://github.com/Thalhammer/jwt-cpp/releases/download/v${JWTCPP_VERSION}/jwt-cpp-v${JWTCPP_VERSION}.tar.gz" -O /tmp/jwt-cpp-v${JWTCPP_VERSION}.tar.gz && \
     mkdir -p /tmp/jwt-cpp-v${JWTCPP_VERSION} && \
     tar -xvf /tmp/jwt-cpp-v${JWTCPP_VERSION}.tar.gz -C /tmp/jwt-cpp-v${JWTCPP_VERSION} --strip-components=1 && \
@@ -213,30 +212,29 @@ RUN wget "https://github.com/Thalhammer/jwt-cpp/releases/download/v${JWTCPP_VERS
     rm -rf /tmp/jwt-cpp-v${JWTCPP_VERSION}
 
 
-# OpenCV apt dependencies
+###########################################
+# OpenCV apt dependencies (Ubuntu 24.04)
+###########################################
 RUN apt-get update && \
-    apt-get install -y --install-recommends \
+    apt-get install -y --no-install-recommends \
     libglib2.0-0 libdbus-1-3 \
-    libgl1-mesa-glx libgl1-mesa-dri libglu1-mesa \
-    libegl1 libglx0 \
-    libjpeg-dev libjpeg-turbo8-dev \
-    gstreamer1.0-plugins-base \
-    gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-bad \
-    gstreamer1.0-plugins-ugly \
-    gstreamer1.0-libav \
-    gstreamer1.0-tools \
-    gstreamer1.0-alsa \
+    libgl1-mesa-dri libglu1-mesa libegl1 libglx0 \
+    # Updated JPEG libs for Noble
+    libjpeg-dev libturbojpeg0-dev \
+    # GStreamer 1.0 stack
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    libgstreamer-plugins-bad1.0-dev \
+    gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-alsa \
     gstreamer1.0-pulseaudio \
-    libgstreamer1.0-0 \
-    libgstreamer-plugins-base1.0-0 \
-    libgstreamer-plugins-bad1.0-0 \
-    libpulse0 libpulse-mainloop-glib0 libasound2 \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/*
+    # System audio
+    libpulse0 libasound2t64 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # OpenCV
-ENV OPENCV_VERSION="4.12.0"
+ENV OPENCV_VERSION="4.13.0"
 RUN cd /tmp && \
     wget -O opencv.zip https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VERSION}.zip && \
     wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/refs/tags/${OPENCV_VERSION}.zip && \
@@ -252,45 +250,34 @@ ENV OPENCV_FLAGS=" \
     -DOPENCV_EXTRA_MODULES_PATH=/tmp/opencv_contrib/modules \
     -DBUILD_opencv_python3=OFF \
     -DBUILD_EXAMPLES=OFF \
-    -DWITH_TBB=ON \
-    -DTBB_DIR=${LIBRARY_PATH}/lib/cmake/TBB \
-    -DWITH_CUDA=ON \
-    -DCUDA_TOOLKIT_ROOT_DIR=${LIBRARY_PATH}/cuda \
-    -DCMAKE_CUDA_ARCHITECTURES=61;70;75;80;86;89 \
-    -DOPENCV_DNN_CUDA=ON \
-    -DWITH_CUDNN=ON \
-    -DCMAKE_CXX_STANDARD=17 \
-    -DWITH_JPEG=ON \
-    -DBUILD_JPEG=ON \
-    -DWITH_PNG=ON \
-    -DBUILD_PNG=ON \
-    -DWITH_TIFF=ON \
-    -DBUILD_TIFF=ON \
-    -DWITH_WEBP=ON \
-    -DBUILD_WEBP=ON \
-    -DWITH_OPENEXR=ON \
-    -DBUILD_OPENEXR=ON \
-    -DWITH_JASPER=ON \
-    -DBUILD_JASPER=ON \
-    -DBUILD_ZLIB=ON \
-    -DBUILD_PROTOBUF=ON \
-    -DBUILD_IPP_IW=ON \
-    -DBUILD_ITT=ON \
     -DBUILD_TESTS=OFF \
     -DBUILD_PERF_TESTS=OFF \
-    -DWITH_1394=OFF \
-    -DWITH_V4L=OFF"
+    -DWITH_TBB=ON \
+    -DWITH_CUDA=ON \
+    -DCUDA_TOOLKIT_ROOT_DIR=${LIBRARY_PATH}/cuda \
+    -DOPENCV_DNN_CUDA=ON \
+    -DWITH_CUDNN=ON \
+    -DCMAKE_CUDA_ARCHITECTURES=61;70;75;80;86;89 \
+    -DCMAKE_CXX_STANDARD=17 \
+    -DOPENCV_ENABLE_NONFREE=ON \
+    -DWITH_V4L=ON \
+    -DWITH_GSTREAMER=ON \
+    -DWITH_NVCUVID=OFF \
+    -DWITH_NVCUVENC=OFF \
+    -DWITH_1394=OFF"
 
 # Build SHARED
 # RUN cmake -S /tmp/opencv -B /tmp/opencv/build_shared \
 #         ${OPENCV_FLAGS} -DBUILD_SHARED_LIBS=ON && \
 #     cmake --build /tmp/opencv/build_shared --target install --parallel $(nproc)
 
-# Build STATIC
-RUN cmake -S /tmp/opencv -B /tmp/opencv/build_static \
-        ${OPENCV_FLAGS} -DBUILD_SHARED_LIBS=OFF && \
-    cmake --build /tmp/opencv/build_static --target install --parallel $(nproc) && \
-    rm -rf /tmp/opencv /tmp/opencv_contrib /tmp/opencv.zip /tmp/opencv_contrib.zip
+# Build STATIC USING NINJA
+RUN mkdir -p /tmp/opencv/build_static && cd /tmp/opencv/build_static && \
+    cmake -G Ninja .. \
+        ${OPENCV_FLAGS} \
+        -DBUILD_SHARED_LIBS=OFF && \
+    ninja install && \
+    rm -rf /tmp/opencv /tmp/opencv_contrib
 
 
 ############################################
@@ -331,9 +318,13 @@ ENV TRT_PARSER_FLAGS=" \
 #     cmake --build /tmp/TensorRT/build_shared --target install --parallel $(nproc)
 
 # Build STATIC parsers
-RUN cmake -S /tmp/TensorRT -B /tmp/TensorRT/build_static \
-        ${TRT_PARSER_FLAGS} -DBUILD_SHARED_LIBS=OFF && \
-    cmake --build /tmp/TensorRT/build_static --target install --parallel $(nproc) && \
+RUN cmake -G Ninja -S /tmp/TensorRT -B /tmp/TensorRT/build_static \
+    ${TRT_PARSER_FLAGS} \
+    -DBUILD_SHARED_LIBS=OFF && \
+    # Force build the protobuf dependency first
+    cmake --build /tmp/TensorRT/build_static --target third_party.protobuf && \
+    # Now build the rest
+    cmake --build /tmp/TensorRT/build_static --target install -j$(nproc) && \
     rm -rf /tmp/TensorRT
 
 # WASM
