@@ -1,9 +1,3 @@
-Here is the consolidated, professional technical guide for configuring a Rust development environment within a Qt Creator Docker container.
-
-This guide covers system dependencies, Language Server Protocol (LSP) configuration for code completion, and LLDB integration for debugging.
-
------
-
 # Qt Creator & Rust: Comprehensive Configuration Guide
 
 ### 1\. System Preparation (Container Terminal)
