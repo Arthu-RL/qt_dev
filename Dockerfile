@@ -340,16 +340,16 @@ RUN cmake -G Ninja -S /tmp/TensorRT -B /tmp/TensorRT/build_static \
 # ENV PATH="${EMSDK}/upstream/emscripten:${PATH}"
 
 # EZSH
-RUN git clone https://github.com/jotyGill/ezsh && \
-    cd ezsh && \
-    ./install.sh -c
+# RUN git clone https://github.com/jotyGill/ezsh && \
+#     cd ezsh && \
+#     ./install.sh -c
 
 ############################################
 # Environment set up
 ############################################
 ENV CPLUS_INCLUDE_PATH="${LIBRARY_PATH}/include:${LIBRARY_PATH}/tensorrt/include:${LIBRARY_PATH}/cuda/include"
 ENV LD_LIBRARY_PATH="${LIBRARY_PATH}/lib:${LIBRARY_PATH}/tensorrt/lib:${LIBRARY_PATH}/cuda/lib64:${LD_LIBRARY_PATH}"
-ENV PATH="${LIBRARY_PATH}/cuda/bin:${LIBRARY_PATH}/tensorrt/bin:${PATH}"
+ENV PATH="${LIBRARY_PATH}/cuda/bin:${LIBRARY_PATH}/tensorrt/bin:${QTCREATOR}/bin:${PATH}"
 ENV PKG_CONFIG_PATH="${LIBRARY_PATH}/lib/pkgconfig:${LIBRARY_PATH}/lib/cmake/TBB:${PKG_CONFIG_PATH}"
 
 
