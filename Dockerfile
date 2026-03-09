@@ -367,7 +367,7 @@ RUN mkdir -p /app
 COPY ./monitor.py /app/monitor.py
 
 # Default shell for interactive debugging (optional)
-SHELL ["/bin/zsh", "-c"]
+SHELL ["/bin/bash", "-c"]
 
 # Run the Python script
 ENTRYPOINT ["python3", "-u", "/app/monitor.py"]
