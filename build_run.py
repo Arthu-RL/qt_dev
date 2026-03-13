@@ -51,7 +51,7 @@ def run(project_path: str, image: str, container_name: str) -> None:
             -e WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
             -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY \
             -v {project_path}:/workspace \
-            -v {project_path}/qtcreator_config:/root/.config/QtProject \
+            -v {project_path}/qtcreator_config:/home/developer/.config/QtProject \
             -w /workspace \
             {image}
     """.strip()
