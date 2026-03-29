@@ -39,6 +39,18 @@ def build(image: str, dockerfile: str, build_args: Optional[str], retry: int) ->
             log.error(f"Build failed with error:\n{e.stderr}")
 
 def run(project_path: str, image: str, container_name: str) -> None:
+    """
+    Runs the container of arthurrl/vulkan-dev:lts image, this will run correctly. 
+    Only nvidia graphics cards are supported, if you use AMD graphics card, 
+    you wil need to change things, in docker run, and Dockerfile too probably, building new images
+
+    Notes:
+        The qtcreator volume works because of the dockerfile file config of the container HOME variable
+
+        RUN mkdir -p /home/developer
+        ENV HOME=/home/developer
+        WORKDIR /home/developer    
+    """ 
     run_command = f"""
         docker rm -f {container_name} && \
         docker run --gpus all --runtime=nvidia --privileged -d --name {container_name} \
