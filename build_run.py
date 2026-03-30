@@ -59,6 +59,8 @@ def run(project_path: str, image: str, container_name: str) -> None:
             -e NVIDIA_DRIVER_CAPABILITIES=all \
             -e DISPLAY=$DISPLAY \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
+            --device /dev/dri:/dev/dri \
+            --device /dev/snd:/dev/snd \
             -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
             -e WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
             -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY \

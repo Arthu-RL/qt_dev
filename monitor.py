@@ -3,12 +3,9 @@ import time
 import psutil
 import os
 import subprocess as sp
-import json
 from datetime import datetime
 import signal
 import sys
-import threading
-import queue
 import re
 from collections import deque
 
@@ -21,7 +18,6 @@ CONFIG = {
     "container_name": "VULKAN-DEV",
     "log_interval": 60,
     "history_size": 15,
-    "gpu_poll_interval": 5,
     "alert_thresholds": {
         "cpu": 85, "memory": 85, "gpu_memory": 85, "gpu_temp": 80, "disk": 90,
     }
@@ -38,8 +34,6 @@ history = {
 # Store previous network/disk states to calculate speed/deltas
 last_net = {"recv": 0, "sent": 0, "time": time.time()}
 last_disk = {"read": 0, "write": 0, "time": time.time()}
-
-gpu_metrics_queue = queue.Queue()
 
 class UI:
     """Terminal aesthetics and ANSI codes"""
@@ -179,18 +173,57 @@ def get_system_metrics():
         "swap_used_gb": swap.used / (1024**3)
     }
     history["memory"].append(memory.percent)
+  
+    gpu_metrics = {
+        "available": False,
+        "status": "INITIALIZING",
+        "utilization": 0.0,
+        "memory_used_mb": 0.0,
+        "memory_total_mb": 0.0,
+        "memory_percent": 0.0,
+        "temperature": 0.0
+    }
     
-    # GPU
     try:
-        if not gpu_metrics_queue.empty():
-            metrics["gpu"] = gpu_metrics_queue.get(block=False)
-            history["gpu_util"].append(metrics["gpu"].get("utilization", 0))
-            history["gpu_memory"].append(metrics["gpu"].get("memory_percent", 0))
+        # Use a slightly longer timeout for the first run, then 2s for subsequent
+        result = sp.run(
+            "nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits", 
+            shell=True, capture_output=True, text=True, timeout=3
+        )
+        
+        if result.returncode == 0 and result.stdout.strip():
+            gpu_data = result.stdout.strip().split(',')
+            if len(gpu_data) >= 4:
+                gpu_metrics.update({
+                    "available": True,
+                    "status": "OPERATIONAL",
+                    "utilization": float(gpu_data[0].strip()),
+                    "memory_used_mb": float(gpu_data[1].strip()),
+                    "memory_total_mb": float(gpu_data[2].strip()),
+                    "memory_percent": (float(gpu_data[1].strip()) / float(gpu_data[2].strip())) * 100 if float(gpu_data[2].strip()) > 0 else 0,
+                    "temperature": float(gpu_data[3].strip())
+                })
         else:
-            history["gpu_util"].append(history["gpu_util"][-1] if history["gpu_util"] else 0)
-            history["gpu_memory"].append(history["gpu_memory"][-1] if history["gpu_memory"] else 0)
-    except Exception:
-        pass
+            # Check for common NVIDIA errors in stderr
+            error_msg = result.stderr.lower()
+            if "mismatch" in error_msg:
+                gpu_metrics["status"] = "VER_MISMATCH"
+            elif "initialized" in error_msg or "communication" in error_msg:
+                gpu_metrics["status"] = "DRIVER_ERROR"
+            else:
+                gpu_metrics["status"] = "OFFLINE"
+
+    except sp.TimeoutExpired:
+        gpu_metrics["status"] = "TIMEOUT"
+    except FileNotFoundError:
+        gpu_metrics["status"] = "SMI_MISSING"
+    except Exception as e:
+        gpu_metrics["status"] = "UNKNOWN_ERR"
+        
+    metrics["gpu"] = gpu_metrics
+    # Only append to history if valid data exists, else append last known or 0
+    history["gpu_util"].append(gpu_metrics["utilization"])
+    history["gpu_memory"].append(gpu_metrics["memory_percent"])
         
     # Disk & Net (with speed calculations)
     disk_usage = psutil.disk_usage('/')
@@ -230,7 +263,7 @@ def get_system_metrics():
     processes = []
     for proc in sorted(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent', 'cmdline']), 
                        key=lambda p: p.info['cpu_percent'] + p.info['memory_percent'], 
-                       reverse=True)[:7]:  # Grab top 7 now
+                       reverse=True)[:7]:
         try:
             cat = "SYSTEM"
             name = proc.info['name'].lower()
@@ -255,25 +288,6 @@ def get_system_metrics():
             pass
     metrics["top_processes"] = processes
     return metrics
-
-def collect_gpu_metrics():
-    while True:
-        try:
-            result = sp.run("nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits", 
-                         shell=True, capture_output=True, text=True)
-            if result.returncode == 0 and result.stdout.strip():
-                gpu_data = result.stdout.strip().split(',')
-                if len(gpu_data) >= 4:
-                    gpu_metrics_queue.put({
-                        "utilization": float(gpu_data[0]),
-                        "memory_used_mb": float(gpu_data[1]),
-                        "memory_total_mb": float(gpu_data[2]),
-                        "memory_percent": (float(gpu_data[1]) / float(gpu_data[2])) * 100,
-                        "temperature": float(gpu_data[3])
-                    })
-        except Exception:
-            pass
-        time.sleep(CONFIG["gpu_poll_interval"])
 
 def print_dashboard(metrics):
     os.system('clear' if os.name == 'posix' else 'cls')
@@ -313,16 +327,35 @@ def print_dashboard(metrics):
         print(f"{UI.PURPLE}{UI.V}{UI.ENDC} Swap Use:  {UI.ORANGE}{mem['swap_used_gb']:.2f} GB ({mem['swap_percent']}%) - Watch for paging!{UI.ENDC}")
 
     # 3. GRAPHICS SUBSYSTEM
-    if "gpu" in metrics:
-        gpu = metrics["gpu"]
+    gpu = metrics["gpu"]
+    print(f"{UI.PURPLE}{UI.L_T}{UI.H*70}{UI.R_T}{UI.ENDC}")
+    print(f"{UI.PURPLE}{UI.V}{UI.ENDC} {UI.BOLD}GRAPHICS SUBSYSTEM{UI.ENDC}")
+    
+    if gpu["available"]:
         gpu_pred = predictive_analysis(history["gpu_memory"], "VRAM", CONFIG["alert_thresholds"]["gpu_memory"])
-        print(f"{UI.PURPLE}{UI.L_T}{UI.H*70}{UI.R_T}{UI.ENDC}")
-        print(f"{UI.PURPLE}{UI.V}{UI.ENDC} {UI.BOLD}GRAPHICS SUBSYSTEM{UI.ENDC}")
         print(f"{UI.PURPLE}{UI.V}{UI.ENDC} GPU Core:  {generate_progress_bar(gpu['utilization'], 25)} {gpu['utilization']:>5.1f}%")
-        print(f"{UI.PURPLE}{UI.V}{UI.ENDC} VRAM:      {generate_progress_bar(gpu['memory_percent'], 25)} {gpu['memory_percent']:>5.1f}%")
+        print(f"{UI.PURPLE}{UI.V}{UI.ENDC} VRAM Use:  {generate_progress_bar(gpu['memory_percent'], 25)} {gpu['memory_percent']:>5.1f}%")
+        print(f"{UI.PURPLE}{UI.V}{UI.ENDC} VRAM Cap:  {UI.CYAN}{gpu['memory_used_mb']:.0f} MB / {gpu['memory_total_mb']:.0f} MB{UI.ENDC}")
         print(f"{UI.PURPLE}{UI.V}{UI.ENDC} History:   [{generate_sparkline(history['gpu_memory'])}] {gpu_pred}")
+        
         temp_color = UI.RED if gpu['temperature'] > 80 else UI.GREEN
         print(f"{UI.PURPLE}{UI.V}{UI.ENDC} Temp:      {temp_color}{gpu['temperature']}°C{UI.ENDC}")
+    else:
+        # Dynamic error messaging based on the status code we set in get_system_metrics
+        status = gpu.get("status", "OFFLINE")
+        status_color = UI.RED if status in ["VER_MISMATCH", "DRIVER_ERROR"] else UI.GREY
+        
+        print(f"{UI.PURPLE}{UI.V}{UI.ENDC} Status:    {status_color}[{status}]{UI.ENDC}")
+        
+        if status == "VER_MISMATCH":
+            print(f"{UI.PURPLE}{UI.V}{UI.ENDC} {UI.YELLOW}⚠ Kernel/Library mismatch detected. Reboot required.{UI.ENDC}")
+        elif status == "SMI_MISSING":
+            print(f"{UI.PURPLE}{UI.V}{UI.ENDC} {UI.GREY}Command 'nvidia-smi' not found in path.{UI.ENDC}")
+        else:
+            print(f"{UI.PURPLE}{UI.V}{UI.ENDC} GPU Core:  {UI.GREY}No active NVIDIA device found.{UI.ENDC}")
+            
+        print(f"{UI.PURPLE}{UI.V}{UI.ENDC} VRAM:      {UI.GREY}N/A{UI.ENDC}")
+        print(f"{UI.PURPLE}{UI.V}{UI.ENDC} Temp:      {UI.GREY}N/A{UI.ENDC}")
 
     # 4. STORAGE & I/O
     disk = metrics["disk"]
@@ -354,7 +387,6 @@ def print_dashboard(metrics):
             "PKG_MGR": UI.WHITE
         }.get(proc["category"], UI.GREEN)
         
-        # Format the process line carefully to maintain box alignment
         line = f" {cat_color}[{proc['category']:<10}]{UI.ENDC} {proc['name'][:18]:<18} | CPU: {proc['cpu_percent']:>4.1f}% | RAM: {proc['memory_percent']:>4.1f}%"
         print(f"{UI.PURPLE}{UI.V}{UI.ENDC}{line}")
 
@@ -362,9 +394,6 @@ def print_dashboard(metrics):
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)
-    
-    gpu_thread = threading.Thread(target=collect_gpu_metrics, daemon=True)
-    gpu_thread.start()
     
     print(f"{UI.GREEN}Initializing Telemetry... Gathering baseline history and I/O speeds.{UI.ENDC}")
     
