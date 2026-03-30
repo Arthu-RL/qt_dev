@@ -13,9 +13,6 @@ ARG CMAKE_VERSION=4.2.3
 ARG QT_VERSION=6.10.2
 ARG QTCREATOR_VERSION=18.0.2
 ARG FFMPEG_VERSION=n8.0.1
-# Drivers updated for 2026 compatibility
-ARG CUDA_VERSION=12.9.0
-ARG CUDNN_VERSION=9.9.0
 ARG GO_VERSION=1.26.1
 
 
@@ -224,10 +221,10 @@ RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86
     apt-get update && \
     apt-get install -y --no-install-recommends \
         cuda-toolkit-12-9 \
-        cuda-drivers-580 \
         libcudnn9-cuda-12 \
         libcudnn9-dev-cuda-12 && \
-    rm cuda-keyring_1.1-1_all.deb
+    rm cuda-keyring_1.1-1_all.deb && \
+    rm -rf /var/lib/apt/lists/*
 
 
 ENV PATH="/usr/local/cuda-12.9/bin:/opt/Qt/${QT_VERSION}/bin:${PATH}"

@@ -51,19 +51,26 @@ def run(project_path: str, image: str, container_name: str) -> None:
         ENV HOME=/home/developer
         WORKDIR /home/developer    
     """ 
+    env_vars = {
+        "DISPLAY": os.getenv("DISPLAY", ":0"),
+        "XDG_RUNTIME_DIR": os.getenv("XDG_RUNTIME_DIR", ""),
+        "WAYLAND_DISPLAY": os.getenv("WAYLAND_DISPLAY", "wayland-0")
+    }
+    
     run_command = f"""
-        docker rm -f {container_name} && \
-        docker run --gpus all --runtime=nvidia --privileged -d --name {container_name} \
+        docker rm -f {container_name} || true && \
+        docker run --gpus all --privileged -d \
+            --name {container_name} \
             --ipc=host \
             -e NVIDIA_VISIBLE_DEVICES=all \
             -e NVIDIA_DRIVER_CAPABILITIES=all \
-            -e DISPLAY=$DISPLAY \
+            -e DISPLAY={env_vars['DISPLAY']} \
+            -e XDG_RUNTIME_DIR={env_vars['XDG_RUNTIME_DIR']} \
+            -e WAYLAND_DISPLAY={env_vars['WAYLAND_DISPLAY']} \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
+            -v {env_vars['XDG_RUNTIME_DIR']}/{env_vars['WAYLAND_DISPLAY']}:{env_vars['XDG_RUNTIME_DIR']}/{env_vars['WAYLAND_DISPLAY']} \
             --device /dev/dri:/dev/dri \
             --device /dev/snd:/dev/snd \
-            -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
-            -e WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
-            -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY \
             -v {project_path}:/workspace \
             -v {project_path}/qtcreator_config:/home/developer/.config/QtProject \
             -w /workspace \
