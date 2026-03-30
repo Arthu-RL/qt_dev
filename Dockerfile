@@ -34,12 +34,15 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Set up Vulkan SDK
 ENV VULKAN_SDK_VERSION="1.4.341.1"
 RUN mkdir -p ${LIBRARY_PATH}/VulkanSDK && \
-    wget -qO - "https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz" | \
-    tar -xJf - -C ${LIBRARY_PATH}/VulkanSDK
-# vk env
-ENV VULKAN_ROOT="${LIBRARY_PATH}/VulkanSDK/${VULKAN_SDK_VERSION}"
-RUN chmod +x ${VULKAN_ROOT}/setup-env.sh && \
-    echo "source ${VULKAN_ROOT}/setup-env.sh" >> ~/.bashrc
+    wget -qO /tmp/vulkansdk.tar.xz "https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz" && \
+    tar -xJf /tmp/vulkansdk.tar.xz -C ${LIBRARY_PATH}/VulkanSDK && \
+    rm -f /tmp/vulkansdk.tar.xz
+
+ENV VULKAN_SDK="${LIBRARY_PATH}/VulkanSDK/${VULKAN_SDK_VERSION}/x86_64"
+ENV PATH="${VULKAN_SDK}/bin:${PATH}"
+ENV LD_LIBRARY_PATH="${VULKAN_SDK}/lib:${LD_LIBRARY_PATH}"
+ENV VK_ADD_LAYER_PATH="${VULKAN_SDK}/share/vulkan/explicit_layer.d"
+ENV PKG_CONFIG_PATH="${VULKAN_SDK}/share/pkgconfig:${VULKAN_SDK}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 
 # Download and install GLFW from source
 ENV GLFW_VERSION="3.4"
