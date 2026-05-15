@@ -32,7 +32,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Set up Vulkan SDK
-ENV VULKAN_SDK_VERSION="1.4.341.1"
+ENV VULKAN_SDK_VERSION="1.4.350.0"
 RUN mkdir -p ${LIBRARY_PATH}/VulkanSDK && \
     wget -qO /tmp/vulkansdk.tar.xz "https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz" && \
     tar -xJf /tmp/vulkansdk.tar.xz -C ${LIBRARY_PATH}/VulkanSDK && \
@@ -215,137 +215,18 @@ RUN wget "https://github.com/Thalhammer/jwt-cpp/releases/download/v${JWTCPP_VERS
     rm -rf /tmp/jwt-cpp-v${JWTCPP_VERSION}
 
 
-###########################################
-# OpenCV apt dependencies (Ubuntu 24.04)
-###########################################
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    libglib2.0-0 libdbus-1-3 \
-    libgl1-mesa-dri libglu1-mesa libegl1 libglx0 \
-    # Updated JPEG libs for Noble
-    libjpeg-dev libturbojpeg0-dev \
-    # GStreamer 1.0 stack
-    libgstreamer1.0-dev \
-    libgstreamer-plugins-base1.0-dev \
-    libgstreamer-plugins-bad1.0-dev \
-    gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
-    gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-alsa \
-    gstreamer1.0-pulseaudio \
-    # System audio
-    libpulse0 libasound2t64 \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# OpenCV
-ENV OPENCV_VERSION="4.13.0"
-RUN cd /tmp && \
-    wget -O opencv.zip https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VERSION}.zip && \
-    wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/refs/tags/${OPENCV_VERSION}.zip && \
-    unzip opencv.zip && \
-    unzip opencv_contrib.zip && \
-    mv opencv-${OPENCV_VERSION} opencv && \
-    mv opencv_contrib-${OPENCV_VERSION} opencv_contrib
-
-# Common OpenCV flags
-ENV OPENCV_FLAGS=" \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
-    -DOPENCV_EXTRA_MODULES_PATH=/tmp/opencv_contrib/modules \
-    -DBUILD_opencv_python3=OFF \
-    -DBUILD_EXAMPLES=OFF \
-    -DBUILD_TESTS=OFF \
-    -DBUILD_PERF_TESTS=OFF \
-    -DWITH_TBB=ON \
-    -DWITH_CUDA=ON \
-    -DCUDA_TOOLKIT_ROOT_DIR=${LIBRARY_PATH}/cuda \
-    -DOPENCV_DNN_CUDA=ON \
-    -DWITH_CUDNN=ON \
-    -DCMAKE_CUDA_ARCHITECTURES=61;70;75;80;86;89 \
-    -DCMAKE_CXX_STANDARD=17 \
-    -DOPENCV_ENABLE_NONFREE=ON \
-    -DWITH_V4L=ON \
-    -DWITH_GSTREAMER=ON \
-    -DWITH_NVCUVID=OFF \
-    -DWITH_NVCUVENC=OFF \
-    -DWITH_1394=OFF"
-
-# Build SHARED
-# RUN cmake -S /tmp/opencv -B /tmp/opencv/build_shared \
-#         ${OPENCV_FLAGS} -DBUILD_SHARED_LIBS=ON && \
-#     cmake --build /tmp/opencv/build_shared --target install --parallel $(nproc)
-
-# Build STATIC USING NINJA
-RUN mkdir -p /tmp/opencv/build_static && cd /tmp/opencv/build_static && \
-    cmake -G Ninja .. \
-        ${OPENCV_FLAGS} \
-        -DBUILD_SHARED_LIBS=OFF && \
-    ninja install && \
-    rm -rf /tmp/opencv /tmp/opencv_contrib
-
-
 ############################################
-# TENSORRT BUILD
+# ONNX RUNTIME (ORT)
 ############################################
-ENV TENSORRT_VERSION="10.13.3"
+ENV ORT_VERSION="1.26.0"
 
-RUN pip3 install --no-cache-dir onnx numpy
-
-# É necessário download da lib no site official manualmente e depois fazer COPY
-# RUN wget "https://developer.nvidia.com/downloads/compute/machine-learning/tensorrt/${TENSORRT_VERSION}/tars/TensorRT-${TENSORRT_VERSION}.9.Linux.x86_64-gnu.cuda-12.9.tar.gz" -O /tmp/tensorrt.tar.gz && \
-COPY TensorRT-${TENSORRT_VERSION}.9/ ${LIBRARY_PATH}/tensorrt/
-
-# Build the open-source parsers (both static/shared) against the SDK
-RUN git clone --branch v${TENSORRT_VERSION} --recursive https://github.com/NVIDIA/TensorRT.git /tmp/TensorRT
-
-# Common TensorRT Parser flags
-ENV TRT_PARSER_FLAGS=" \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} \
-        -DTENSORRT_INSTALL_DIR=${LIBRARY_PATH}/tensorrt \
-        -DCUDA_TOOLKIT_ROOT_DIR=${LIBRARY_PATH}/cuda \
-        -DCMAKE_CUDA_COMPILER=${LIBRARY_PATH}/cuda/bin/nvcc \
-        -DCMAKE_CUDA_ARCHITECTURES=61;70;75;80;86;89 \
-        -DTRT_LIB_DIR=${LIBRARY_PATH}/tensorrt/lib \
-        -DTRT_BIN_DIR=${LIBRARY_PATH}/tensorrt/bin \
-        -DBUILD_PARSERS=ON \
-        -DBUILD_PLUGINS=OFF \
-        -DBUILD_SAMPLES=OFF \
-        -DBUILD_TESTS=OFF \
-        -DBUILD_PYTHON=OFF \
-        -DBUILD_ONNX_PARSER=ON \
-        -DONNX_NAMESPACE=onnx"
-
-# Build SHARED parsers
-# RUN cmake -S /tmp/TensorRT -B /tmp/TensorRT/build_shared \
-#         ${TRT_PARSER_FLAGS} -DBUILD_SHARED_LIBS=ON && \
-#     cmake --build /tmp/TensorRT/build_shared --target install --parallel $(nproc)
-
-# Build STATIC parsers
-RUN cmake -G Ninja -S /tmp/TensorRT -B /tmp/TensorRT/build_static \
-    ${TRT_PARSER_FLAGS} \
-    -DBUILD_SHARED_LIBS=OFF && \
-    # Force build the protobuf dependency first
-    cmake --build /tmp/TensorRT/build_static --target third_party.protobuf && \
-    # Now build the rest
-    cmake --build /tmp/TensorRT/build_static --target install -j$(nproc) && \
-    rm -rf /tmp/TensorRT
-
-# WASM
-# RUN cd /opt && \
-#     git clone https://github.com/emscripten-core/emsdk.git && \
-#     cd emsdk && \
-#     git checkout 4.0.21 && \
-#     ./emsdk install 4.0.21 && \
-#     ./emsdk activate 4.0.21
-
-# ENV EMSDK="/opt/emsdk"
-# ENV EM_CONFIG="/opt/emsdk/.emscripten"
-# ENV PATH="${EMSDK}/upstream/emscripten:${PATH}"
-
-# EZSH
-# RUN git clone https://github.com/jotyGill/ezsh && \
-#     cd ezsh && \
-#     ./install.sh -c
+# Download the pre-compiled C++ library for Linux with GPU (CUDA 12.x) support
+RUN wget "https://github.com/microsoft/onnxruntime/releases/download/v${ORT_VERSION}/onnxruntime-linux-x64-gpu-${ORT_VERSION}.tgz" -O /tmp/ort.tgz && \
+    tar -xzf /tmp/ort.tgz -C /tmp/ && \
+    cp -r /tmp/onnxruntime-linux-x64-gpu-${ORT_VERSION}/include/* /usr/local/include/ && \
+    cp -r /tmp/onnxruntime-linux-x64-gpu-${ORT_VERSION}/lib/* /usr/local/lib/ && \
+    # Cleanup
+    rm -rf /tmp/ort.tgz /tmp/onnxruntime*
 
 ############################################
 # Environment set up
