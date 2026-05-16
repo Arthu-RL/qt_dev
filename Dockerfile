@@ -110,38 +110,40 @@ RUN cd ${LIBRARY_PATH}/src/glad && \
 ENV DEARIMGUI_VERSION="1.92.6"
 RUN wget "https://github.com/ocornut/imgui/archive/refs/tags/v${DEARIMGUI_VERSION}.tar.gz" -O /tmp/imgui-${DEARIMGUI_VERSION}.tar.gz && \
     tar -xzf /tmp/imgui-${DEARIMGUI_VERSION}.tar.gz -C /tmp/ && \
-    rm /tmp/imgui-${DEARIMGUI_VERSION}.tar.gz
-RUN mkdir -p ${LIBRARY_PATH}/include/imgui && \
+    rm /tmp/imgui-${DEARIMGUI_VERSION}.tar.gz && \
+    mkdir -p ${LIBRARY_PATH}/include/imgui && \
     mv /tmp/imgui-${DEARIMGUI_VERSION}/* ${LIBRARY_PATH}/include/imgui/ && \
     rm -rf /tmp/imgui-${DEARIMGUI_VERSION}
-ENV PLOG_VERSION="1.1.11"
-RUN wget "https://github.com/SergiusTheBest/plog/archive/refs/tags/${PLOG_VERSION}.tar.gz" -O /tmp/plog-${PLOG_VERSION}.tar.gz && \
-    tar -xzf /tmp/plog-${PLOG_VERSION}.tar.gz -C /tmp/ && \
-    rm /tmp/plog-${PLOG_VERSION}.tar.gz
-RUN mv /tmp/plog-${PLOG_VERSION}/include/* ${LIBRARY_PATH}/include/ && \
-    rm -rf /tmp/plog-${PLOG_VERSION}
+
+# ENV PLOG_VERSION="1.1.11"
+# RUN wget "https://github.com/SergiusTheBest/plog/archive/refs/tags/${PLOG_VERSION}.tar.gz" -O /tmp/plog-${PLOG_VERSION}.tar.gz && \
+#     tar -xzf /tmp/plog-${PLOG_VERSION}.tar.gz -C /tmp/ && \
+#     rm /tmp/plog-${PLOG_VERSION}.tar.gz
+# RUN mv /tmp/plog-${PLOG_VERSION}/include/* ${LIBRARY_PATH}/include/ && \
+#     rm -rf /tmp/plog-${PLOG_VERSION}
+
 ENV GLM_VERSION="1.0.3"
 RUN wget "https://github.com/g-truc/glm/archive/refs/tags/${GLM_VERSION}.tar.gz" -O /tmp/glm-${GLM_VERSION}.tar.gz && \
     tar -xzf /tmp/glm-${GLM_VERSION}.tar.gz -C /tmp/ && \
-    rm /tmp/glm-${GLM_VERSION}.tar.gz
-RUN mv /tmp/glm-${GLM_VERSION}/glm ${LIBRARY_PATH}/include && \
+    rm /tmp/glm-${GLM_VERSION}.tar.gz && \
+    mv /tmp/glm-${GLM_VERSION}/glm ${LIBRARY_PATH}/include && \
     rm -rf /tmp/glm-${GLM_VERSION}
+
 ENV NLOHMANN_JSON="3.12.0"
 RUN wget "https://github.com/nlohmann/json/releases/download/v${NLOHMANN_JSON}/json.tar.xz" -O /tmp/json.tar.xz && \
     tar -xf /tmp/json.tar.xz -C /tmp/ && \
-    rm /tmp/json.tar.xz
-RUN mv /tmp/json/include/* ${LIBRARY_PATH}/include/ && \
+    rm /tmp/json.tar.xz && \
+    mv /tmp/json/include/* ${LIBRARY_PATH}/include/ && \
     rm -rf /tmp/json
 
 # C3C is a pre-built compiler
-ENV C3C_VERSION="0.7.10"
+ENV C3C_VERSION="0.8.0_3"
 RUN wget -q "https://github.com/c3lang/c3c/releases/download/v${C3C_VERSION}/c3-linux.tar.gz" -O /tmp/c3-linux.tar.gz && \
     tar -xzf /tmp/c3-linux.tar.gz -C /tmp/ && \
     rm /tmp/c3-linux.tar.gz
 RUN mv /tmp/c3/lib/* ${LIBRARY_PATH}/lib && \
     mv /tmp/c3/c3c ${LIBRARY_PATH}/bin && \
     rm -rf /tmp/c3
-
 
 # Build SQLITE lib from source
 ENV SQLITECPP_VERSION="3.3.3"
@@ -162,7 +164,7 @@ RUN wget -q "https://github.com/SRombauts/SQLiteCpp/archive/refs/tags/${SQLITECP
 
 
 # Raylib
-ENV RAYLIB_VERSION="5.5"
+ENV RAYLIB_VERSION="6.0"
 RUN wget "https://github.com/raysan5/raylib/releases/download/${RAYLIB_VERSION}/raylib-${RAYLIB_VERSION}_linux_amd64.tar.gz" -O /tmp/raylib-${RAYLIB_VERSION}_linux_amd64.tar.gz && \
     tar -xzf /tmp/raylib-${RAYLIB_VERSION}_linux_amd64.tar.gz -C /tmp/ && \
     rm -rf /tmp/raylib-${RAYLIB_VERSION}_linux_amd64.tar.gz
@@ -227,6 +229,18 @@ RUN wget "https://github.com/microsoft/onnxruntime/releases/download/v${ORT_VERS
     cp -r /tmp/onnxruntime-linux-x64-gpu-${ORT_VERSION}/lib/* /usr/local/lib/ && \
     # Cleanup
     rm -rf /tmp/ort.tgz /tmp/onnxruntime*
+
+
+############################################
+# STB libraries
+############################################
+RUN wget "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h" -O /usr/local/include/stb_image.h && \
+    wget "https://raw.githubusercontent.com/nothings/stb/master/stb_image_write.h" -O /usr/local/include/stb_image_write.h && \
+    wget "https://raw.githubusercontent.com/nothings/stb/master/stb_image_resize2.h" -O /usr/local/include/stb_image_resize2.h && \
+    wget "https://raw.githubusercontent.com/nothings/stb/master/stb_vorbis.c" -O /usr/local/include/stb_vorbis.c && \
+    wget "https://raw.githubusercontent.com/nothings/stb/master/stb_include.h" -O /usr/local/include/stb_include.h && \
+    chmod 644 /usr/local/include/stb_*
+
 
 ############################################
 # Environment set up
