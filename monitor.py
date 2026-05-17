@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# Made by AI
 import time
 import psutil
 import os
