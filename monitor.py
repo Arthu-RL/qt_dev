@@ -1,4 +1,4 @@
-# Made by AI
+# This file code was made by AI
 import time
 import psutil
 import os
