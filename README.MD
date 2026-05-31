@@ -25,7 +25,7 @@ The Docker environment that you can build includes:
 - **[nlohmann/json](https://github.com/nlohmann/json)** (MIT License)
 - **[SQLiteCpp](https://github.com/SRombauts/SQLiteCpp)** (MIT License)
 - **[raylib](https://www.raylib.com/)** (zlib License)
-- **[oneTBB (Intel TBB)](https://github.com/oneapi-src/oneTBB)** (Apache 2.0 License)
+<!-- - **[oneTBB (Intel TBB)](https://github.com/oneapi-src/oneTBB)** (Apache 2.0 License) -->
 - **[C3C Compiler](https://github.com/c3lang/c3c)** (LGPL-3.0 License)
 - **[libink](https://github.com/Arthu-RL/libink)** (MIT License)
 - **[ONNX Runtime](https://github.com/microsoft/onnxruntime)** (MIT License)

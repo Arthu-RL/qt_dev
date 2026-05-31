@@ -187,17 +187,17 @@ RUN cp -r /tmp/raylib-${RAYLIB_VERSION}_linux_amd64/lib/* ${LIBRARY_PATH}/lib &&
 
 
 # oneTBB
-RUN cd /tmp && \
-    git clone "https://github.com/uxlfoundation/oneTBB.git" && \
-    # Build SHARED
-    # cmake -S /tmp/oneTBB -B /tmp/oneTBB/build_shared \
-    #     -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=ON && \
-    # cmake --build /tmp/oneTBB/build_shared --target install --parallel $(nproc) && \
-    # Build STATIC
-    cmake -S /tmp/oneTBB -B /tmp/oneTBB/build_static \
-        -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=OFF && \
-    cmake --build /tmp/oneTBB/build_static --target install --parallel $(nproc) && \
-    rm -rf /tmp/oneTBB
+# RUN cd /tmp && \
+#     git clone "https://github.com/uxlfoundation/oneTBB.git" && \
+#     # Build SHARED
+#     # cmake -S /tmp/oneTBB -B /tmp/oneTBB/build_shared \
+#     #     -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=ON && \
+#     # cmake --build /tmp/oneTBB/build_shared --target install --parallel $(nproc) && \
+#     # Build STATIC
+#     cmake -S /tmp/oneTBB -B /tmp/oneTBB/build_static \
+#         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=OFF && \
+#     cmake --build /tmp/oneTBB/build_static --target install --parallel $(nproc) && \
+#     rm -rf /tmp/oneTBB
 
 # libink
 RUN cd /tmp && \
@@ -208,15 +208,19 @@ RUN cd /tmp && \
     cmake --build /tmp/libink/build --target install --parallel $(nproc) && \
     rm -rf /tmp/libink
 
-# libwma commented now, but it will be descomented soon
-# RUN cd /tmp && \
-#     git clone "https://github.com/Arthu-RL/libwma.git" && \
-#     cmake -S /tmp/libwma -B /tmp/libwma/build \ 
-#         -DCMAKE_BUILD_TYPE=Release \
-#         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
-#     cmake --build /tmp/libwma/build --target install --parallel $(nproc) && \
-#     rm -rf /tmp/libwma
+# libwma
+# Libwma depends on wayland
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        wayland-protocols libwayland-dev \
+    && rm -rf /var/lib/apt/lists/*
 
+RUN cd /tmp && \
+    git clone "https://github.com/Arthu-RL/libwma.git" && \
+    cmake -S /tmp/libwma -B /tmp/libwma/build \ 
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
+    cmake --build /tmp/libwma/build --target install --parallel $(nproc) && \
+    rm -rf /tmp/libwma
     
 # JWT
 ENV JWTCPP_VERSION="0.7.2"
