@@ -41,8 +41,21 @@ RUN mkdir -p ${LIBRARY_PATH}/VulkanSDK && \
 ENV VULKAN_SDK="${LIBRARY_PATH}/VulkanSDK/${VULKAN_SDK_VERSION}/x86_64"
 ENV PATH="${VULKAN_SDK}/bin:${PATH}"
 ENV LD_LIBRARY_PATH="${VULKAN_SDK}/lib:${LD_LIBRARY_PATH}"
+ENV VK_ICD_FILENAMES="${VULKAN_SDK}/share/vulkan/icd.d/intel_icd.x86_64.json:/usr/share/vulkan/icd.d/nvidia_icd.json:/usr/share/vulkan/icd.d/radeon_icd.x86_64.json"
 ENV VK_ADD_LAYER_PATH="${VULKAN_SDK}/share/vulkan/explicit_layer.d"
 ENV PKG_CONFIG_PATH="${VULKAN_SDK}/share/pkgconfig:${VULKAN_SDK}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+
+# Install base dependencies that SDK tools (like glslc) might need.
+# Symlink the SDK's libvulkan.so into the standard OS paths so CMake finds it instantly.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libvulkan1 \
+        vulkan-tools \
+        mesa-vulkan-drivers \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /usr/lib/x86_64-linux-gnu \
+    && ln -sf ${VULKAN_SDK}/lib/libvulkan.so /usr/lib/x86_64-linux-gnu/libvulkan.so \
+    && ln -sf ${VULKAN_SDK}/lib/libvulkan.so.1 /usr/lib/x86_64-linux-gnu/libvulkan.so.1 \
+    && ldconfig
 
 # Download and install GLFW from source
 ENV GLFW_VERSION="3.4"
