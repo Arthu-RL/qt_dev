@@ -65,11 +65,11 @@ RUN wget "https://github.com/glfw/glfw/archive/refs/tags/${GLFW_VERSION}.tar.gz"
     # Build SHARED
     # cmake -S /tmp/glfw-${GLFW_VERSION} -B /tmp/glfw-${GLFW_VERSION}/build_shared \
     #     -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=ON && \
-    # cmake --build /tmp/glfw-${GLFW_VERSION}/build_shared --target install --parallel $(nproc) && \
+    # cmake --build /tmp/glfw-${GLFW_VERSION}/build_shared --target install --parallel $(($(nproc) / 2)) && \
     # Build STATIC
     cmake -S /tmp/glfw-${GLFW_VERSION} -B /tmp/glfw-${GLFW_VERSION}/build_static \
         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=OFF && \
-    cmake --build /tmp/glfw-${GLFW_VERSION}/build_static --target install --parallel $(nproc) && \
+    cmake --build /tmp/glfw-${GLFW_VERSION}/build_static --target install --parallel $(($(nproc) / 2)) && \
     rm -rf /tmp/glfw-${GLFW_VERSION}
 
 
@@ -80,12 +80,12 @@ RUN cd /tmp && \
     # cmake -S /tmp/SDL -B /tmp/SDL/build_shared \
     #     -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=ON \
     #     -DSDL_ALSA=ON -DSDL_OPENGL=ON -DSDL_VULKAN=ON && \
-    # cmake --build /tmp/SDL/build_shared --target install --parallel $(nproc) && \
+    # cmake --build /tmp/SDL/build_shared --target install --parallel $(($(nproc) / 2)) && \
     # Build STATIC
     cmake -S /tmp/SDL -B /tmp/SDL/build_static \
         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=OFF \
         -DSDL_ALSA=ON -DSDL_OPENGL=ON -DSDL_VULKAN=ON && \
-    cmake --build /tmp/SDL/build_static --target install --parallel $(nproc) && \
+    cmake --build /tmp/SDL/build_static --target install --parallel $(($(nproc) / 2)) && \
     rm -rf /tmp/SDL
 
 
@@ -95,11 +95,11 @@ RUN cd /tmp && \
     # # Build SHARED
     # cmake -S /tmp/SDL_ttf -B /tmp/SDL_ttf/build_shared \
     #     -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=ON && \
-    # cmake --build /tmp/SDL_ttf/build_shared --target install --parallel $(nproc) && \
+    # cmake --build /tmp/SDL_ttf/build_shared --target install --parallel $(($(nproc) / 2)) && \
     # Build STATIC
     cmake -S /tmp/SDL_ttf -B /tmp/SDL_ttf/build_static \
         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=OFF && \
-    cmake --build /tmp/SDL_ttf/build_static --target install --parallel $(nproc) && \
+    cmake --build /tmp/SDL_ttf/build_static --target install --parallel $(($(nproc) / 2)) && \
     rm -rf /tmp/SDL_ttf
 
 # Gerar arquivos GLAD (OpenGL 4.6) para C/C++
@@ -167,12 +167,12 @@ RUN wget -q "https://github.com/SRombauts/SQLiteCpp/archive/refs/tags/${SQLITECP
     # cmake -S /tmp/SQLiteCpp-${SQLITECPP_VERSION} -B /tmp/SQLiteCpp-${SQLITECPP_VERSION}/build_shared \
     #     -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=ON \
     #     -DSQLITECPP_INTERNAL_SQLITE=ON && \
-    # cmake --build /tmp/SQLiteCpp-${SQLITECPP_VERSION}/build_shared --target install --parallel $(nproc) && \
+    # cmake --build /tmp/SQLiteCpp-${SQLITECPP_VERSION}/build_shared --target install --parallel $(($(nproc) / 2)) && \
     # Build STATIC
     cmake -S /tmp/SQLiteCpp-${SQLITECPP_VERSION} -B /tmp/SQLiteCpp-${SQLITECPP_VERSION}/build_static \
         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=OFF \
         -DSQLITECPP_INTERNAL_SQLITE=ON && \
-    cmake --build /tmp/SQLiteCpp-${SQLITECPP_VERSION}/build_static --target install --parallel $(nproc) && \
+    cmake --build /tmp/SQLiteCpp-${SQLITECPP_VERSION}/build_static --target install --parallel $(($(nproc) / 2)) && \
     rm -rf /tmp/SQLiteCpp-${SQLITECPP_VERSION}
 
 
@@ -192,11 +192,11 @@ RUN cp -r /tmp/raylib-${RAYLIB_VERSION}_linux_amd64/lib/* ${LIBRARY_PATH}/lib &&
 #     # Build SHARED
 #     # cmake -S /tmp/oneTBB -B /tmp/oneTBB/build_shared \
 #     #     -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=ON && \
-#     # cmake --build /tmp/oneTBB/build_shared --target install --parallel $(nproc) && \
+#     # cmake --build /tmp/oneTBB/build_shared --target install --parallel $(($(nproc) / 2)) && \
 #     # Build STATIC
 #     cmake -S /tmp/oneTBB -B /tmp/oneTBB/build_static \
 #         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} -DBUILD_SHARED_LIBS=OFF && \
-#     cmake --build /tmp/oneTBB/build_static --target install --parallel $(nproc) && \
+#     cmake --build /tmp/oneTBB/build_static --target install --parallel $(($(nproc) / 2)) && \
 #     rm -rf /tmp/oneTBB
 
 # libink
@@ -205,21 +205,21 @@ RUN cd /tmp && \
     cmake -S /tmp/libink -B /tmp/libink/build \ 
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
-    cmake --build /tmp/libink/build --target install --parallel $(nproc) && \
+    cmake --build /tmp/libink/build --target install --parallel $(($(nproc) / 2)) && \
     rm -rf /tmp/libink
 
 # libwma
 # Libwma depends on wayland
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        wayland-protocols libwayland-dev \
-    && rm -rf /var/lib/apt/lists/*
+        wayland-protocols libwayland-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN cd /tmp && \
     git clone "https://github.com/Arthu-RL/libwma.git" && \
     cmake -S /tmp/libwma -B /tmp/libwma/build \ 
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
-    cmake --build /tmp/libwma/build --target install --parallel $(nproc) && \
+    cmake --build /tmp/libwma/build --target install --parallel $(($(nproc) / 2)) && \
     rm -rf /tmp/libwma
     
 # JWT
@@ -230,7 +230,7 @@ RUN wget "https://github.com/Thalhammer/jwt-cpp/releases/download/v${JWTCPP_VERS
     rm -rf /tmp/jwt-cpp-v${JWTCPP_VERSION}.tar.gz && \
     cmake -S /tmp/jwt-cpp-v${JWTCPP_VERSION} -B /tmp/jwt-cpp-v${JWTCPP_VERSION}/build \
         -DCMAKE_INSTALL_PREFIX=${LIBRARY_PATH} && \
-    cmake --build /tmp/jwt-cpp-v${JWTCPP_VERSION}/build --target install --parallel $(nproc) && \
+    cmake --build /tmp/jwt-cpp-v${JWTCPP_VERSION}/build --target install --parallel $(($(nproc) / 2)) && \
     rm -rf /tmp/jwt-cpp-v${JWTCPP_VERSION}
 
 
