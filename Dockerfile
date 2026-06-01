@@ -33,6 +33,16 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Set up Vulkan SDK
 ENV VULKAN_SDK_VERSION="1.4.350.0"
+
+# Install base dependencies that SDK tools (like glslc) might need.
+# Symlink the SDK's libvulkan.so into the standard OS paths so CMake finds it instantly.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libvulkan1 \
+        libvulkan-dev \
+        vulkan-tools \
+        mesa-vulkan-drivers && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p ${LIBRARY_PATH}/VulkanSDK && \
     wget -qO /tmp/vulkansdk.tar.xz "https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz" && \
     tar -xJf /tmp/vulkansdk.tar.xz -C ${LIBRARY_PATH}/VulkanSDK && \
@@ -44,18 +54,6 @@ ENV LD_LIBRARY_PATH="${VULKAN_SDK}/lib:${LD_LIBRARY_PATH}"
 ENV VK_ICD_FILENAMES="${VULKAN_SDK}/share/vulkan/icd.d/intel_icd.x86_64.json:/usr/share/vulkan/icd.d/nvidia_icd.json:/usr/share/vulkan/icd.d/radeon_icd.x86_64.json"
 ENV VK_ADD_LAYER_PATH="${VULKAN_SDK}/share/vulkan/explicit_layer.d"
 ENV PKG_CONFIG_PATH="${VULKAN_SDK}/share/pkgconfig:${VULKAN_SDK}/lib/pkgconfig:${PKG_CONFIG_PATH}"
-
-# Install base dependencies that SDK tools (like glslc) might need.
-# Symlink the SDK's libvulkan.so into the standard OS paths so CMake finds it instantly.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        libvulkan1 \
-        vulkan-tools \
-        mesa-vulkan-drivers \
-    && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /usr/lib/x86_64-linux-gnu \
-    && ln -sf ${VULKAN_SDK}/lib/libvulkan.so /usr/lib/x86_64-linux-gnu/libvulkan.so \
-    && ln -sf ${VULKAN_SDK}/lib/libvulkan.so.1 /usr/lib/x86_64-linux-gnu/libvulkan.so.1 \
-    && ldconfig
 
 # Download and install GLFW from source
 ENV GLFW_VERSION="3.4"
@@ -102,19 +100,21 @@ RUN cd /tmp && \
     cmake --build /tmp/SDL_ttf/build_static --target install --parallel $(($(nproc) / 2)) && \
     rm -rf /tmp/SDL_ttf
 
-# Gerar arquivos GLAD (OpenGL 4.6) para C/C++
+# Generate GLAD files (OpenGL 4.6)
 RUN pip install glad && \
     python3 -m glad --generator=c --api="gl=4.6" --out-path=/tmp/glad
-# Criar pastas e mover arquivos
+
+# Install GLAD headers/source
 RUN mkdir -p ${LIBRARY_PATH}/lib ${LIBRARY_PATH}/include ${LIBRARY_PATH}/src/glad && \
     mv /tmp/glad/include/glad ${LIBRARY_PATH}/include/ && \
     mv /tmp/glad/src/* ${LIBRARY_PATH}/src/glad/ && \
     rm -rf /tmp/glad
-# Build BOTH static and shared GLAD libraries with PIC support
+
+# Build static and shared GLAD libraries
 RUN cd ${LIBRARY_PATH}/src/glad && \
-    g++ -fPIC -I${LIBRARY_PATH}/include -c glad.c -o glad.o && \
+    gcc -fPIC -I${LIBRARY_PATH}/include -c glad.c -o glad.o && \
     ar rcs ${LIBRARY_PATH}/lib/libglad.a glad.o && \
-    g++ -shared -fPIC glad.c -o ${LIBRARY_PATH}/lib/libglad.so.1.0.0 && \
+    gcc -shared -fPIC glad.c -I${LIBRARY_PATH}/include -o ${LIBRARY_PATH}/lib/libglad.so.1.0.0 && \
     ln -sf libglad.so.1.0.0 ${LIBRARY_PATH}/lib/libglad.so.1 && \
     ln -sf libglad.so.1 ${LIBRARY_PATH}/lib/libglad.so && \
     rm glad.o
