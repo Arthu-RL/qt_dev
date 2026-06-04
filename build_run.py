@@ -59,7 +59,7 @@ def run(project_path: str, image: str, container_name: str) -> None:
     
     run_command = f"""
         docker rm -f {container_name} || true && \
-        docker run --gpus all --privileged -d \
+        docker run --gpus all -d \
             --name {container_name} \
             --ipc=host \
             -e NVIDIA_VISIBLE_DEVICES=all \
@@ -67,6 +67,7 @@ def run(project_path: str, image: str, container_name: str) -> None:
             -e DISPLAY={env_vars['DISPLAY']} \
             -e XDG_RUNTIME_DIR={env_vars['XDG_RUNTIME_DIR']} \
             -e WAYLAND_DISPLAY={env_vars['WAYLAND_DISPLAY']} \
+            -v /usr/share/vulkan/icd.d/nvidia_icd.json:/usr/share/vulkan/icd.d/nvidia_icd.json:ro \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
             -v {env_vars['XDG_RUNTIME_DIR']}/{env_vars['WAYLAND_DISPLAY']}:{env_vars['XDG_RUNTIME_DIR']}/{env_vars['WAYLAND_DISPLAY']} \
             --device /dev/dri:/dev/dri \

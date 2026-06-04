@@ -50,8 +50,6 @@ RUN mkdir -p ${LIBRARY_PATH}/VulkanSDK && \
 
 ENV VULKAN_SDK="${LIBRARY_PATH}/VulkanSDK/${VULKAN_SDK_VERSION}/x86_64"
 ENV PATH="${VULKAN_SDK}/bin:${PATH}"
-ENV LD_LIBRARY_PATH="${VULKAN_SDK}/lib:${LD_LIBRARY_PATH}"
-ENV VK_ICD_FILENAMES="${VULKAN_SDK}/share/vulkan/icd.d/intel_icd.x86_64.json:/usr/share/vulkan/icd.d/nvidia_icd.json:/usr/share/vulkan/icd.d/radeon_icd.x86_64.json"
 ENV VK_ADD_LAYER_PATH="${VULKAN_SDK}/share/vulkan/explicit_layer.d"
 ENV PKG_CONFIG_PATH="${VULKAN_SDK}/share/pkgconfig:${VULKAN_SDK}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 
