@@ -1,131 +1,44 @@
-# Qt Creator & Rust: Comprehensive Configuration Guide
+# Rust Setup for Qt Creator on Ubuntu 24 Workspace
 
-### 1\. System Preparation (Container Terminal)
-
-Before configuring the IDE, ensure the necessary binaries and libraries are installed in your container environment.
-
-**1.1 Install Dependencies**
-Execute the following in your container terminal:
+## Install Rust
 
 ```bash
-# Update and install debugger and python support
-apt-get update && apt-get install -y lldb python3-lldb
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+```
 
-# Install Rust Analyzer via rustup
+## Install Rust Analyzer
+
+```bash
 rustup component add rust-analyzer
 ```
 
-**1.2 Verify Paths**
-Locate the binaries to use in the IDE configuration. Run these commands and note the outputs:
+## Verify Installation
+
+```bash
+rust-analyzer --version
+```
+
+or
 
 ```bash
 which rust-analyzer
-# Expected: /root/.cargo/bin/rust-analyzer
-
-which lldb
-# Expected: /usr/bin/lldb
 ```
 
------
+## Configure Qt Creator
 
-### 2\. Enable Code Completion (LSP)
+If Qt Creator cannot start the bundled Rust Language Server:
 
-Qt Creator requires the generic Language Client plugin to communicate with `rust-analyzer`.
+1. Open **Edit → Preferences → Language Client**.
+2. Locate the Rust Language Server configuration.
+3. Replace the bundled executable path with the path returned by:
 
-**2.1 Enable the Plugin**
-
-1.  Navigate to **Help** \> **About Plugins**.
-2.  Search for **LanguageClient**.
-3.  Check the box to enable it.
-4.  **Restart Qt Creator**.
-
-**2.2 Configure the Client**
-
-1.  Navigate to **Edit** \> **Preferences** (or **Tools** \> **Options**).
-2.  Select **Language Client** from the sidebar.
-3.  Click **Add** to create a new client config.
-4.  Enter the following details:
-      * **Name:** `Rust`
-      * **Language / MIME type:** `text/x-rust` (or `application/x-rust`)
-      * **File Pattern:** `*.rs`
-      * **Executable:** `/root/.cargo/bin/rust-analyzer` (The path from step 1.2).
-      * **Run Mode:** `StdIO`
-5.  Click **Apply**.
-
------
-
-### 3\. Configure the Debugger (LLDB)
-
-To enable breakpoints and variable inspection, you must register LLDB and assign it to your build kit.
-
-**3.1 Register LLDB**
-
-1.  In **Preferences**, select **Kits** \> **Debuggers**.
-2.  Click **Add**.
-3.  **Name:** `Rust LLDB`
-4.  **Path:** `/usr/bin/lldb` (The path from step 1.2).
-5.  Click **Apply**.
-
-**3.2 Assign to Kit**
-
-1.  Switch to the **Kits**, go to **manage kits**.
-2.  Select your active Kit (e.g., "Desktop").
-3.  Locate the **Debugger** field.
-4.  Select **Rust LLDB** from the dropdown menu.
-5.  Click **OK**.
-
------
-
-### 4\. Project Build & Run Configuration
-
-Qt Creator does not natively auto-detect Cargo targets. You must configure the Build and Run steps for every new Rust project.
-
-**4.1 Configure Build Step (Compiling)**
-
-1.  Open your project (Select `Cargo.toml`).
-2.  Click **Projects** (Sidebar) \> **Build**.
-3.  Under **Build Steps**, click **Add Build Step** \> **Custom Process Step**.
-4.  **Command:** `cargo`
-5.  **Arguments:** `build`
-6.  Move this step to the **top** of the list ensuring it runs before any other steps.
-
-**4.2 Configure Run Step (Executing)**
-
-1.  Switch to the **Run** settings tab.
-2.  **Run Configuration:** Click **Add** \> **Custom Executable**.
-3.  **Executable:** Browse to your project's `target/debug/` directory and select the compiled binary (e.g., `project_name`).
-      * *Note: You must run `cargo build` manually once via terminal to generate this file initially.*
-4.  **Working Directory:** Set to the project root (folder containing `Cargo.toml`).
-
------
-
-### 5\. Verification & Testing
-
-Use the following code snippet to verify that both code completion and debugging are functioning correctly.
-
-**5.1 The Test Code (`src/main.rs`)**
-
-```rust
-fn main() {
-    let framework = "Qt Creator";
-    let language = "Rust";
-    let mut counter = 0;
-
-    println!("Setup Verification:");
-    println!("IDE: {}", framework);
-    
-    // Loop to test debugger stepping and variable inspection
-    for i in 0..5 {
-        counter += i;
-        let status = format!("Loop iteration: {}, Total: {}", i, counter);
-        println!("{}", status); // Set Breakpoint Here
-    }
-}
+```bash
+which rust-analyzer
 ```
 
-**5.2 Execution Procedure**
+Example:
 
-1.  **Code Completion:** Type `framework.` inside `main()` and ensure methods like `len()` or `to_string()` appear.
-2.  **Debugging:** Click the left margin on the `println!("{}", status);` line to set a red breakpoint.
-3.  **Run:** Press **F5**.
-4.  **Result:** The application should launch, print the header, and pause at the breakpoint. The **Local Variables** pane on the right should display the current values of `i`, `counter`, and `status`.
+```text
+/home/developer/.cargo/bin/rust-analyzer
+```
