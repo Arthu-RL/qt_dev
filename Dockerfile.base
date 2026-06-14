@@ -1,19 +1,16 @@
 ###########################################
-#  Ubuntu 24.04 as the base image 
+#  Ubuntu 26.04 as the base image 
 ###########################################
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 
 ###########################################
 #  Build Args
 ###########################################
-ARG LLVM_VERSION=21
-ARG NINJA_VERSION=1.13.2
-ARG CMAKE_VERSION=4.2.3
-ARG QT_VERSION=6.10.2
-ARG QTCREATOR_VERSION=18.0.2
-ARG FFMPEG_VERSION=n8.0.1
-ARG GO_VERSION=1.26.1
+ARG CMAKE_VERSION=4.3.3
+ARG QT_VERSION=6.11.1
+ARG QTCREATOR_VERSION=19.0.2
+ARG FFMPEG_VERSION=n8.1.1
 
 
 ###########################################
@@ -21,7 +18,7 @@ ARG GO_VERSION=1.26.1
 ###########################################
 LABEL org.opencontainers.image.authors="ArthurRL"
 LABEL org.opencontainers.image.version="1.0.0"
-LABEL org.opencontainers.image.description="Development environment with Qt, FFmpeg, CUDA"
+LABEL org.opencontainers.image.description="Development environment with Qt, FFmpeg"
 LABEL org.opencontainers.image.source="https://github.com/Arthu-RL"
 LABEL org.opencontainers.image.licenses="MIT"
 
@@ -62,15 +59,15 @@ RUN pip install --no-cache-dir psutil
 
 
 #########################################################
-# Base Development & Build Essentials (Ubuntu 24.04)
+# Base Development & Build Essentials (Ubuntu 26.04)
 #########################################################
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     # --- Core Toolchain ---
     build-essential \
-    gcc-13 g++-13 \
+    gcc-15 g++-15 \
     gdb lldb ccache \
-    cmake ninja-build \
+    ninja-build \
     pkg-config \
     # --- System & Kernel Helpers ---
     liburing-dev \
@@ -114,8 +111,10 @@ RUN apt-get update && \
 
     # --- Multimedia (Audio/Video) ---
     libasound2-dev libpulse-dev libopus-dev libx264-dev \
-
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    
+    # --- Qt Creator specific dependencies ---
+    golang-go && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
 ###################################
@@ -128,54 +127,33 @@ ENV LC_ALL=en_US.UTF-8
 
 
 ###################################
-# Compiler Configuration (GCC 13)
+# Compiler Configuration (GCC 15)
 ###################################
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 \
-    --slave /usr/bin/g++ g++ /usr/bin/g++-13 \
-    --slave /usr/bin/gcov gcov /usr/bin/gcov-13
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 100 \
+    --slave /usr/bin/g++ g++ /usr/bin/g++-15 \
+    --slave /usr/bin/gcov gcov /usr/bin/gcov-15
 
 
 ###################################
-#  LLVM, Ninja, CMake, Go, FFmpeg
+#  CMake, FFmpeg
 ###################################
-RUN wget -q "https://apt.llvm.org/llvm.sh" -O /tmp/llvm.sh && \
-    chmod +x /tmp/llvm.sh && /tmp/llvm.sh ${LLVM_VERSION} && \
-    apt-get install -y llvm-${LLVM_VERSION}-dev libclang-${LLVM_VERSION}-dev clang-${LLVM_VERSION} && \
-    rm /tmp/llvm.sh
-
-# Ninja
-RUN wget -q "https://github.com/ninja-build/ninja/releases/download/v${NINJA_VERSION}/ninja-linux.zip" -O /tmp/ninja.zip && \
-    unzip /tmp/ninja.zip -d /usr/local/bin && rm /tmp/ninja.zip
-
 # CMake
 RUN wget -qO- "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz" \
     | tar --strip-components=1 -xz -C /usr/local
-
-# Go
-RUN wget -q "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -O /tmp/go.tar.gz && \
-    tar -C /usr/local -xzf /tmp/go.tar.gz && rm /tmp/go.tar.gz
-ENV PATH="/usr/local/go/bin:${PATH}"
 
 # FFmpeg (Built from source for latest features)
 RUN wget "https://github.com/FFmpeg/FFmpeg/archive/refs/tags/${FFMPEG_VERSION}.tar.gz" -O /tmp/ffmpeg.tar.gz && \
     tar -xzf /tmp/ffmpeg.tar.gz -C /tmp/ && \
     cd /tmp/FFmpeg-${FFMPEG_VERSION} && \
     ./configure --prefix=/usr/local --enable-shared --enable-gpl --enable-libx264 && \
-    make -j$(nproc) && make install && ldconfig && \
+    make -j$(( ($(nproc)+1)/2 )) && make install && ldconfig && \
     rm -rf /tmp/FFmpeg*
-
-
 
 
 ###################################
 # Building Qt
 ###################################
-ENV LLVM_INSTALL_DIR="/usr/lib/llvm-${LLVM_VERSION}"
 ENV QT_DIR="/opt/Qt/${QT_VERSION}"
-
-ENV LD_LIBRARY_PATH="${LLVM_INSTALL_DIR}/lib:${QT_DIR}/lib:${LD_LIBRARY_PATH:-}"
-# Update CMAKE_PREFIX_PATH for 24.04 logic
-ENV CMAKE_PREFIX_PATH="${QT_DIR}:${LLVM_INSTALL_DIR}:${CMAKE_PREFIX_PATH}"
 
 # Download and extract in one go to keep layer size down
 RUN wget -q "https://download.qt.io/official_releases/qt/${QT_VERSION%.*}/${QT_VERSION}/single/qt-everywhere-src-${QT_VERSION}.tar.xz" -O /tmp/qt.tar.xz && \
@@ -183,13 +161,13 @@ RUN wget -q "https://download.qt.io/official_releases/qt/${QT_VERSION%.*}/${QT_V
     tar -xJf /tmp/qt.tar.xz -C /tmp/qt-src --strip-components=1 && \
     rm /tmp/qt.tar.xz
 
-# Configure and build using GCC 13 (via update-alternatives set earlier)
+# Configure and build using GCC (via update-alternatives set earlier)
 RUN mkdir -p /tmp/qt-src/build && cd /tmp/qt-src/build && \
     ../configure -prefix ${QT_DIR} \
     -release -opensource -confirm-license \
     -nomake tests -nomake examples \
     -skip qtopcua -skip qtwebengine && \
-    cmake --build . --parallel $(nproc) && \
+    cmake --build . --parallel $(( ($(nproc)+1)/2 )) && \
     cmake --install . && \
     rm -rf /tmp/qt-src
 
@@ -204,29 +182,23 @@ RUN wget -q "https://download.qt.io/official_releases/qtcreator/${QTCREATOR_VERS
     tar -xJf /tmp/qtcreator.tar.xz -C /tmp/qtcreator-src --strip-components=1 && \
     rm /tmp/qtcreator.tar.xz
 
-# Ubuntu 24.04 + Ninja + GCC 13
+# Ubuntu 26.04 + GCC
 RUN cmake -G Ninja -S /tmp/qtcreator-src -B /tmp/qtcreator-src/build \
         -DCMAKE_INSTALL_PREFIX=${QTCREATOR} \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" && \
-    cmake --build /tmp/qtcreator-src/build --parallel $(nproc) --target install && \
+        -DCMAKE_PREFIX_PATH="${QT_DIR}" && \
+    cmake --build /tmp/qtcreator-src/build --parallel $(( ($(nproc)+1)/2 )) --target install && \
     rm -rf /tmp/qtcreator-src
 
 
-##################################################
-#  CUDA 12.9 & cuDNN 9.9 for Ubuntu 24.04
-##################################################
-RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb && \
-    dpkg -i cuda-keyring_1.1-1_all.deb && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-        cuda-toolkit-12-9 \
-        libcudnn9-cuda-12 \
-        libcudnn9-dev-cuda-12 && \
-    rm cuda-keyring_1.1-1_all.deb && \
-    rm -rf /var/lib/apt/lists/*
+###########################################
+#  ENV setup
+###########################################
+ENV CC=/usr/bin/gcc-15
+ENV CXX=/usr/bin/g++-15
 
-
-ENV PATH="/usr/local/cuda-12.9/bin:/opt/Qt/${QT_VERSION}/bin:${PATH}"
-ENV LD_LIBRARY_PATH="/usr/local/cuda-12.9/lib64:/opt/Qt/${QT_VERSION}/lib:${LD_LIBRARY_PATH}"
-ENV PKG_CONFIG_PATH="${LIBRARY_PATH}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+ENV LOCAL_PREFIX="/usr/local"
+ENV CMAKE_PREFIX_PATH="${QT_DIR}:${LOCAL_PREFIX}"
+ENV PATH="/opt/Qt/${QT_VERSION}/bin:${QTCREATOR}/bin:${LOCAL_PREFIX}/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/opt/Qt/${QT_VERSION}/lib:${LOCAL_PREFIX}/lib"
+ENV PKG_CONFIG_PATH="/opt/Qt/${QT_VERSION}/lib/pkgconfig:${LOCAL_PREFIX}/lib/pkgconfig"
