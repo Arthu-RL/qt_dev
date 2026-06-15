@@ -78,21 +78,17 @@ RUN apt-get update && \
     gnupg gnupg2 ca-certificates software-properties-common \
     # --- Parser Generators (Needed for Qt/FFmpeg) ---
     flex bison texinfo \
-
     # --- Low-Level / Compiler Build Deps ---
     libgmp-dev libmpfr-dev libmpc-dev \
     libffi-dev libdw-dev libxml2-dev zlib1g-dev \
     libssl-dev libnghttp2-dev libsecret-1-dev libgcrypt20-dev \
     libzstd-dev libcurl4-openssl-dev libedit-dev \
-
     # --- Database & Storage ---
     libsqlite3-dev libpqxx-dev \
     libjsoncpp-dev libminizip-dev \
-
     # --- Math & Linear Algebra ---
     libeigen3-dev libblas-dev liblapack-dev \
     libprotobuf-dev protobuf-compiler \
-
     # --- X11 & Wayland (Full Qt GUI Support) ---
     libx11-dev libxext-dev libxrender-dev libxrandr-dev \
     libxi-dev libxkbcommon-dev libxkbcommon-x11-dev \
@@ -103,15 +99,12 @@ RUN apt-get update && \
     libxcursor-dev libxdamage1 libwayland-dev wayland-protocols \
     libdecor-0-dev libgtk-3-dev libharfbuzz-dev libcairo2-dev \
     libfontconfig1-dev libfreetype6-dev \
-
     # --- Graphics & GPU (Vulkan/OpenGL/Mesa) ---
     libglvnd-dev libgl1-mesa-dev libegl1-mesa-dev libgles2-mesa-dev \
     libglu1-mesa-dev libvulkan1 vulkan-tools mesa-vulkan-drivers \
     libpci-dev libudev-dev \
-
     # --- Multimedia (Audio/Video) ---
     libasound2-dev libpulse-dev libopus-dev libx264-dev \
-    
     # --- Qt Creator specific dependencies ---
     golang-go && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -187,7 +180,7 @@ RUN cmake -G Ninja -S /tmp/qtcreator-src -B /tmp/qtcreator-src/build \
         -DCMAKE_INSTALL_PREFIX=${QTCREATOR} \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_PREFIX_PATH="${QT_DIR}" && \
-    cmake --build /tmp/qtcreator-src/build --parallel $(( ($(nproc)+1)/2 )) --target install && \
+    cmake --build /tmp/qtcreator-src/build --parallel 8 --target install && \
     rm -rf /tmp/qtcreator-src
 
 
