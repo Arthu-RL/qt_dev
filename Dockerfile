@@ -19,6 +19,8 @@ WORKDIR /home/developer
 ###################################
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+    # Java & Utils (Required for Android Tools & SDKs)
+    openjdk-21-jdk \
     # ONNX & Pybind
     libonnx-dev pybind11-dev \
     # Wayland (Required for libwma)
@@ -148,7 +150,7 @@ RUN cd /tmp && \
         -DCMAKE_INSTALL_PREFIX=${LOCAL_PREFIX} && \
     cmake --build /tmp/libwma/build --target install --parallel $(($(nproc) / 2)) && \
     rm -rf /tmp/libwma
-    
+
 
 # JWT
 ENV JWTCPP_VERSION="0.7.2"
@@ -205,10 +207,71 @@ RUN wget "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/arch
     rm -rf /tmp/vma.tar.gz /tmp/VulkanMemoryAllocator-${VMA_VERSION}
 
 ENV VULKAN_SDK="${LOCAL_PREFIX}/VulkanSDK/${VULKAN_SDK_VERSION}/x86_64"
-ENV PATH="${VULKAN_SDK}/bin:${PATH}"
 ENV VK_ADD_LAYER_PATH="${VULKAN_SDK}/share/vulkan/explicit_layer.d"
 ENV PKG_CONFIG_PATH="${VULKAN_SDK}/share/pkgconfig:${VULKAN_SDK}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 
+
+############################################
+# Android SDK, NDK, and Gradle
+############################################
+ENV JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+ENV ANDROID_HOME="/opt/android-sdk"
+ENV ANDROID_SDK_ROOT=${ANDROID_HOME}
+ENV ANDROID_NDK_VERSION="27.1.12297006"
+ENV ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"
+
+# Install Android SDK Command-line Tools and NDK
+RUN mkdir -p ${ANDROID_HOME}/cmdline-tools && \
+    wget -q \
+      https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
+      -O /tmp/cmdline-tools.zip && \
+    unzip -q /tmp/cmdline-tools.zip -d /tmp && \
+    mv /tmp/cmdline-tools ${ANDROID_HOME}/cmdline-tools/latest && \
+    rm -f /tmp/cmdline-tools.zip
+
+ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${PATH}"
+ENV PATH="${ANDROID_HOME}/platform-tools:${PATH}"
+
+# Install SDK packages
+RUN yes | sdkmanager --licenses >/dev/null && \
+    sdkmanager \
+        "platform-tools" \
+        "platforms;android-35" \
+        "build-tools;35.0.0" \
+        "ndk;${ANDROID_NDK_VERSION}"
+
+# Install Gradle
+ENV GRADLE_VERSION="8.11.1"
+ENV GRADLE_HOME="/opt/gradle/gradle-${GRADLE_VERSION}"
+RUN wget -q "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -O /tmp/gradle.zip && \
+    mkdir -p /opt/gradle && \
+    unzip -q /tmp/gradle.zip -d /opt/gradle && \
+    rm /tmp/gradle.zip
+
+############################################
+# Emscripten (WebAssembly)
+############################################
+ENV EMSDK="/opt/emsdk"
+ENV EMSCRIPTEN_VERSION="6.0.0"
+RUN git clone "https://github.com/emscripten-core/emsdk.git" ${EMSDK} && \
+    cd ${EMSDK} && \
+    git fetch --tags && \
+    ./emsdk install ${EMSCRIPTEN_VERSION} && \
+    ./emsdk activate ${EMSCRIPTEN_VERSION}
+
+
+############################################
+# ENV Setup
+############################################
+ENV PATH="${ANDROID_HOME}/platform-tools:${CMDLINE_TOOLS_ROOT}:${GRADLE_HOME}/bin:${EMSDK}:${EMSDK}/upstream/emscripten:${VULKAN_SDK}/bin:${PATH}"
+
+
+############################################
+# Verification
+############################################
+RUN sdkmanager --version && \
+    adb version && \
+    gradle --version
 
 ############################################
 # Monitor

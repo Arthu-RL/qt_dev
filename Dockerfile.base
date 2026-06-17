@@ -7,10 +7,10 @@ FROM ubuntu:26.04
 ###########################################
 #  Build Args
 ###########################################
-ARG CMAKE_VERSION=4.3.3
-ARG QT_VERSION=6.11.1
-ARG QTCREATOR_VERSION=19.0.2
-ARG FFMPEG_VERSION=n8.1.1
+ARG CMAKE_VERSION="4.3.3"
+ARG QT_VERSION="6.11.1"
+ARG QTCREATOR_VERSION="v20.0.0-rc1"
+ARG FFMPEG_VERSION="n8.1.1"
 
 
 ###########################################
@@ -127,8 +127,11 @@ ENV LC_ALL=en_US.UTF-8
 
 
 ###################################
-# Compiler Configuration (GCC 15)
+# GCC
 ###################################
+ENV CC=/usr/bin/gcc-15
+ENV CXX=/usr/bin/g++-15
+
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 100 \
     --slave /usr/bin/g++ g++ /usr/bin/g++-15 \
     --slave /usr/bin/gcov gcov /usr/bin/gcov-15
@@ -173,16 +176,40 @@ RUN mkdir -p /tmp/qt-src/build && cd /tmp/qt-src/build && \
 
 
 ###################################
+# Clang & llvm
+###################################
+RUN wget https://apt.llvm.org/llvm.sh && \
+    chmod +x llvm.sh && \
+    ./llvm.sh 22 && \
+    rm llvm.sh
+
+RUN apt-get update && \
+    apt-get install -y \
+        clang-22 \
+        clangd-22 \
+        clang-tools-22 \
+        clang-format-22 \
+        clang-tidy-22 \
+        llvm-22 \
+        llvm-22-dev \
+        libclang-22-dev \
+        lld-22
+
+RUN clang-22 --version && \
+    clangd-22 --version && \
+    find /usr -name LLVMConfig.cmake
+
+
+###################################
 # Building QtCreator
 ###################################
 ENV QTCREATOR="/opt/QtCreator"
 
-RUN wget -q "https://download.qt.io/official_releases/qtcreator/${QTCREATOR_VERSION%.*}/${QTCREATOR_VERSION}/qt-creator-opensource-src-${QTCREATOR_VERSION}.tar.xz" -O /tmp/qtcreator.tar.xz && \
+RUN wget -q "https://github.com/qt-creator/qt-creator/archive/refs/tags/${QTCREATOR_VERSION}.tar.gz" -O /tmp/qtcreator.tar.gz && \
     mkdir -p /tmp/qtcreator-src && \
-    tar -xJf /tmp/qtcreator.tar.xz -C /tmp/qtcreator-src --strip-components=1 && \
-    rm /tmp/qtcreator.tar.xz
+    tar -xzf /tmp/qtcreator.tar.gz -C /tmp/qtcreator-src --strip-components=1 && \
+    rm /tmp/qtcreator.tar.gz
 
-# Ubuntu 26.04 + GCC
 RUN cmake -G Ninja -S /tmp/qtcreator-src -B /tmp/qtcreator-src/build \
         -DCMAKE_INSTALL_PREFIX=${QTCREATOR} \
         -DCMAKE_BUILD_TYPE=Release \
@@ -194,11 +221,9 @@ RUN cmake -G Ninja -S /tmp/qtcreator-src -B /tmp/qtcreator-src/build \
 ###########################################
 #  ENV setup
 ###########################################
-ENV CC=/usr/bin/gcc-15
-ENV CXX=/usr/bin/g++-15
-
 ENV LOCAL_PREFIX="/usr/local"
 ENV CMAKE_PREFIX_PATH="${QT_DIR}:${LOCAL_PREFIX}"
 ENV PATH="/opt/Qt/${QT_VERSION}/bin:${QTCREATOR}/bin:${LOCAL_PREFIX}/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/opt/Qt/${QT_VERSION}/lib:${LOCAL_PREFIX}/lib"
 ENV PKG_CONFIG_PATH="/opt/Qt/${QT_VERSION}/lib/pkgconfig:${LOCAL_PREFIX}/lib/pkgconfig"
+ENV CMAKE_EXPORT_COMPILE_COMMANDS=ON
