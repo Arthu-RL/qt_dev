@@ -43,29 +43,37 @@ RUN wget "https://github.com/glfw/glfw/archive/refs/tags/${GLFW_VERSION}.tar.gz"
     # Build STATIC
     cmake -S /tmp/glfw-${GLFW_VERSION} -B /tmp/glfw-${GLFW_VERSION}/build_static \
         -DCMAKE_INSTALL_PREFIX=${LOCAL_PREFIX} -DBUILD_SHARED_LIBS=OFF && \
-    cmake --build /tmp/glfw-${GLFW_VERSION}/build_static --target install --parallel $(($(nproc) / 2)) && \
+    cmake --build /tmp/glfw-${GLFW_VERSION}/build_static --target install --parallel $(( ($(nproc)+1)/2 )) && \
     rm -rf /tmp/glfw-${GLFW_VERSION}
 
 
-# SDL2 from source
-RUN cd /tmp && \
-    git clone "https://github.com/libsdl-org/SDL.git" -b SDL2 && \
+# SDL from source
+ENV SDL_VERSION="3.4.10"
+RUN wget "https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERSION}/SDL3-${SDL_VERSION}.tar.gz" -O /tmp/SDL3-${SDL_VERSION}.tar.gz && \
+    tar -xzf /tmp/SDL3-${SDL_VERSION}.tar.gz -C /tmp/ && \
+    rm -rf /tmp/SDL3-${SDL_VERSION}.tar.gz && \
     # Build STATIC
-    cmake -S /tmp/SDL -B /tmp/SDL/build_static \
-        -DCMAKE_INSTALL_PREFIX=${LOCAL_PREFIX} -DBUILD_SHARED_LIBS=OFF \
-        -DSDL_ALSA=ON -DSDL_OPENGL=ON -DSDL_VULKAN=ON && \
-    cmake --build /tmp/SDL/build_static --target install --parallel $(($(nproc) / 2)) && \
-    rm -rf /tmp/SDL
+    cmake -S /tmp/SDL3-${SDL_VERSION} -B /tmp/SDL3-${SDL_VERSION}/build_static \
+        -DCMAKE_INSTALL_PREFIX=${LOCAL_PREFIX} \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DSDL_ALSA=ON \
+        -DSDL_OPENGL=ON \
+        -DSDL_VULKAN=ON \
+        -DSDL_X11_XSCRNSAVER=OFF && \
+    cmake --build /tmp/SDL3-${SDL_VERSION}/build_static --target install --parallel $(( ($(nproc)+1)/2 )) && \
+    rm -rf /tmp/SDL3-${SDL_VERSION}
 
 
 # SDL2_ttf from source
-RUN cd /tmp && \
-    git clone "https://github.com/libsdl-org/SDL_ttf.git" -b SDL2 && \
+ENV SDL_TTF_VERSION="3.2.2"
+RUN wget "https://github.com/libsdl-org/SDL_ttf/releases/download/release-${SDL_TTF_VERSION}/SDL3_ttf-${SDL_TTF_VERSION}.tar.gz" -O /tmp/SDL3_ttf-${SDL_TTF_VERSION}.tar.gz && \
+    tar -xzf /tmp/SDL3_ttf-${SDL_TTF_VERSION}.tar.gz -C /tmp/ && \
+    rm -rf /tmp/SDL3_ttf-${SDL_TTF_VERSION}.tar.gz && \
     # Build STATIC
-    cmake -S /tmp/SDL_ttf -B /tmp/SDL_ttf/build_static \
+    cmake -S /tmp/SDL3_ttf-${SDL_TTF_VERSION} -B /tmp/SDL3_ttf-${SDL_TTF_VERSION}/build_static \
         -DCMAKE_INSTALL_PREFIX=${LOCAL_PREFIX} -DBUILD_SHARED_LIBS=OFF && \
-    cmake --build /tmp/SDL_ttf/build_static --target install --parallel $(($(nproc) / 2)) && \
-    rm -rf /tmp/SDL_ttf
+    cmake --build /tmp/SDL3_ttf-${SDL_TTF_VERSION}/build_static --target install --parallel $(( ($(nproc)+1)/2 )) && \
+    rm -rf /tmp/SDL3_ttf-${SDL_TTF_VERSION}
 
 # Generate GLAD files (OpenGL 4.6)
 RUN pip install --no-cache-dir glad && \
@@ -118,7 +126,7 @@ RUN wget -q "https://github.com/SRombauts/SQLiteCpp/archive/refs/tags/${SQLITECP
     cmake -S /tmp/SQLiteCpp-${SQLITECPP_VERSION} -B /tmp/SQLiteCpp-${SQLITECPP_VERSION}/build_static \
         -DCMAKE_INSTALL_PREFIX=${LOCAL_PREFIX} -DBUILD_SHARED_LIBS=OFF \
         -DSQLITECPP_INTERNAL_SQLITE=ON && \
-    cmake --build /tmp/SQLiteCpp-${SQLITECPP_VERSION}/build_static --target install --parallel $(($(nproc) / 2)) && \
+    cmake --build /tmp/SQLiteCpp-${SQLITECPP_VERSION}/build_static --target install --parallel $(( ($(nproc)+1)/2 )) && \
     rm -rf /tmp/SQLiteCpp-${SQLITECPP_VERSION}
 
 
@@ -138,7 +146,7 @@ RUN cd /tmp && \
     cmake -S /tmp/libink -B /tmp/libink/build \ 
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=${LOCAL_PREFIX} && \
-    cmake --build /tmp/libink/build --target install --parallel $(($(nproc) / 2)) && \
+    cmake --build /tmp/libink/build --target install --parallel $(( ($(nproc)+1)/2 )) && \
     rm -rf /tmp/libink
 
 
@@ -160,7 +168,7 @@ RUN wget "https://github.com/Thalhammer/jwt-cpp/releases/download/v${JWTCPP_VERS
     rm -rf /tmp/jwt-cpp-v${JWTCPP_VERSION}.tar.gz && \
     cmake -S /tmp/jwt-cpp-v${JWTCPP_VERSION} -B /tmp/jwt-cpp-v${JWTCPP_VERSION}/build \
         -DCMAKE_INSTALL_PREFIX=${LOCAL_PREFIX} && \
-    cmake --build /tmp/jwt-cpp-v${JWTCPP_VERSION}/build --target install --parallel $(($(nproc) / 2)) && \
+    cmake --build /tmp/jwt-cpp-v${JWTCPP_VERSION}/build --target install --parallel $(( ($(nproc)+1)/2 )) && \
     rm -rf /tmp/jwt-cpp-v${JWTCPP_VERSION}
 
 
