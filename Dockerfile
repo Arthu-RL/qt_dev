@@ -271,7 +271,7 @@ RUN git clone "https://github.com/emscripten-core/emsdk.git" ${EMSDK} && \
 ############################################
 # ENV Setup
 ############################################
-ENV PATH="${ANDROID_HOME}/platform-tools:${CMDLINE_TOOLS_ROOT}:${GRADLE_HOME}/bin:${EMSDK}:${EMSDK}/upstream/emscripten:${VULKAN_SDK}/bin:${PATH}"
+ENV PATH="${ANDROID_HOME}/platform-tools:${GRADLE_HOME}/bin:${EMSDK}:${EMSDK}/upstream/emscripten:${VULKAN_SDK}/bin:${PATH}"
 
 
 ############################################
