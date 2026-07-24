@@ -193,7 +193,7 @@ RUN wget "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h" -O 
 # Linux, Android, and WASM
 RUN cd /tmp && git clone --branch dev "https://github.com/Arthu-RL/libink.git" && \
     cd libink && \
-    cmake --preset linux && cmake --build --preset linux --target install && \
+    cmake --preset linux-release && cmake --build --preset linux-release --target install && \
     cmake --preset android && cmake --build --preset android --target install && \
     cmake --preset wasm && cmake --build --preset wasm --target install && \
     rm -rf /tmp/libink
@@ -201,7 +201,7 @@ RUN cd /tmp && git clone --branch dev "https://github.com/Arthu-RL/libink.git" &
 # Compile libwma for Linux, Android, and WASM
 RUN cd /tmp && git clone --branch dev "https://github.com/Arthu-RL/libwma.git" && \
     cd libwma && \
-    cmake --preset linux && cmake --build --preset linux --target install && \
+    cmake --preset linux-release && cmake --build --preset linux-release --target install && \
     cmake --preset android && cmake --build --preset android --target install && \
     cmake --preset wasm && cmake --build --preset wasm --target install && \
     rm -rf /tmp/libwma
