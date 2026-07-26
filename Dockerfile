@@ -121,6 +121,32 @@ RUN wget "https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERS
     cmake --build /tmp/SDL3-${SDL_VERSION}/build_static --target install --parallel $(( ($(nproc)+1)/2 )) && \
     rm -rf /tmp/SDL3-${SDL_VERSION}
 
+# libwma's android/wasm presets resolve SDL3 via CMAKE_PREFIX_PATH=${LOCAL_PREFIX}/<target>,
+# so it needs its own cross-compiled install per target (the host build above isn't ABI-compatible).
+RUN wget "https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERSION}/SDL3-${SDL_VERSION}.tar.gz" -O /tmp/SDL3-${SDL_VERSION}.tar.gz && \
+    tar -xzf /tmp/SDL3-${SDL_VERSION}.tar.gz -C /tmp/ && \
+    rm -rf /tmp/SDL3-${SDL_VERSION}.tar.gz && \
+    cmake -S /tmp/SDL3-${SDL_VERSION} -B /tmp/SDL3-${SDL_VERSION}/build_android \
+        -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
+        -DANDROID_ABI=arm64-v8a \
+        -DANDROID_PLATFORM=android-29 \
+        -DANDROID_STL=c++_shared \
+        -DCMAKE_INSTALL_PREFIX=${LOCAL_PREFIX}/android \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DSDL_OPENGL=OFF \
+        -DSDL_OPENGLES=ON \
+        -DSDL_VULKAN=ON && \
+    cmake --build /tmp/SDL3-${SDL_VERSION}/build_android --target install --parallel $(( ($(nproc)+1)/2 )) && \
+    cmake -S /tmp/SDL3-${SDL_VERSION} -B /tmp/SDL3-${SDL_VERSION}/build_wasm \
+        -DCMAKE_TOOLCHAIN_FILE=${EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
+        -DCMAKE_INSTALL_PREFIX=${LOCAL_PREFIX}/wasm \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DSDL_OPENGL=OFF \
+        -DSDL_OPENGLES=ON \
+        -DSDL_VULKAN=OFF && \
+    cmake --build /tmp/SDL3-${SDL_VERSION}/build_wasm --target install --parallel $(( ($(nproc)+1)/2 )) && \
+    rm -rf /tmp/SDL3-${SDL_VERSION}
+
 ENV SDL_TTF_VERSION="3.2.2"
 RUN wget "https://github.com/libsdl-org/SDL_ttf/releases/download/release-${SDL_TTF_VERSION}/SDL3_ttf-${SDL_TTF_VERSION}.tar.gz" -O /tmp/SDL3_ttf-${SDL_TTF_VERSION}.tar.gz && \
     tar -xzf /tmp/SDL3_ttf-${SDL_TTF_VERSION}.tar.gz -C /tmp/ && \
