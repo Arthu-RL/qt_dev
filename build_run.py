@@ -68,7 +68,6 @@ def run(project_path: str, image: str, container_name: str) -> None:
             -e DISPLAY={env_vars['DISPLAY']} \
             -e XDG_RUNTIME_DIR={env_vars['XDG_RUNTIME_DIR']} \
             -e WAYLAND_DISPLAY={env_vars['WAYLAND_DISPLAY']} \
-            -e XAUTHORITY={env_vars['XAUTHORITY']} \
             -v /usr/share/vulkan/icd.d/nvidia_icd.json:/usr/share/vulkan/icd.d/nvidia_icd.json:ro \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
             -v {env_vars['XDG_RUNTIME_DIR']}/{env_vars['WAYLAND_DISPLAY']}:{env_vars['XDG_RUNTIME_DIR']}/{env_vars['WAYLAND_DISPLAY']} \
