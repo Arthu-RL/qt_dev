@@ -54,9 +54,10 @@ def run(project_path: str, image: str, container_name: str) -> None:
     env_vars = {
         "DISPLAY": os.getenv("DISPLAY", ":0"),
         "XDG_RUNTIME_DIR": os.getenv("XDG_RUNTIME_DIR", ""),
-        "WAYLAND_DISPLAY": os.getenv("WAYLAND_DISPLAY", "wayland-0")
+        "WAYLAND_DISPLAY": os.getenv("WAYLAND_DISPLAY", "wayland-0"),
+        "XAUTHORITY": os.getenv("XAUTHORITY", os.path.expanduser("~/.Xauthority")),
     }
-    
+
     run_command = f"""
         docker rm -f {container_name} || true && \
         docker run --gpus all -d \
@@ -67,9 +68,11 @@ def run(project_path: str, image: str, container_name: str) -> None:
             -e DISPLAY={env_vars['DISPLAY']} \
             -e XDG_RUNTIME_DIR={env_vars['XDG_RUNTIME_DIR']} \
             -e WAYLAND_DISPLAY={env_vars['WAYLAND_DISPLAY']} \
+            -e XAUTHORITY={env_vars['XAUTHORITY']} \
             -v /usr/share/vulkan/icd.d/nvidia_icd.json:/usr/share/vulkan/icd.d/nvidia_icd.json:ro \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
             -v {env_vars['XDG_RUNTIME_DIR']}/{env_vars['WAYLAND_DISPLAY']}:{env_vars['XDG_RUNTIME_DIR']}/{env_vars['WAYLAND_DISPLAY']} \
+            -v {env_vars['XAUTHORITY']}:/home/developer/.Xauthority:ro \
             --device /dev/dri:/dev/dri \
             --device /dev/snd:/dev/snd \
             -v {project_path}:/home/developer/workspace \

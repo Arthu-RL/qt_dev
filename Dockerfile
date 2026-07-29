@@ -20,6 +20,8 @@ RUN apt-get update && \
     libonnx-dev pybind11-dev \
     # Wayland (Required for libwma)
     wayland-protocols libwayland-dev \
+    # X11 (Required for libwma's X11 backend + running desktop/GUI apps)
+    libx11-dev libxext-dev xauth \
     # Vulkan & Mesa
     libvulkan1 libvulkan-dev vulkan-tools mesa-vulkan-drivers && \
     apt-get clean && apt-get autoremove -y && \
@@ -220,6 +222,7 @@ RUN wget "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h" -O 
 RUN cd /tmp && git clone --branch dev "https://github.com/Arthu-RL/libink.git" && \
     cd libink && \
     cmake --preset linux-release && cmake --build --preset linux-release --target install && \
+    cmake --preset linux-debug && cmake --build --preset linux-debug --target install && \
     cmake --preset android && cmake --build --preset android --target install && \
     cmake --preset wasm && cmake --build --preset wasm --target install && \
     rm -rf /tmp/libink
@@ -228,6 +231,7 @@ RUN cd /tmp && git clone --branch dev "https://github.com/Arthu-RL/libink.git" &
 RUN cd /tmp && git clone --branch dev "https://github.com/Arthu-RL/libwma.git" && \
     cd libwma && \
     cmake --preset linux-release && cmake --build --preset linux-release --target install && \
+    cmake --preset linux-debug && cmake --build --preset linux-debug --target install && \
     cmake --preset android && cmake --build --preset android --target install && \
     cmake --preset wasm && cmake --build --preset wasm --target install && \
     rm -rf /tmp/libwma
