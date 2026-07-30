@@ -125,6 +125,14 @@ RUN wget "https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERS
 
 # libwma's android/wasm presets resolve SDL3 via CMAKE_PREFIX_PATH=${LOCAL_PREFIX}/<target>,
 # so it needs its own cross-compiled install per target (the host build above isn't ABI-compatible).
+#
+# The wasm build below adds -pthread: libink's ThreadPool/WorkerThread require
+# it on Emscripten (ink/src/CMakeLists.txt exports it PUBLIC, so it propagates
+# into wma and then any app linking Aura3D). Without it here, SDL_atomic.c.o
+# links without shared-memory support while ink/wma's objects require it
+# wasm-ld then refuses the final link with "--shared-memory is disallowed by
+# SDL_atomic.c.o". Every static lib in the wasm dependency chain must agree on
+# this, since it's a whole-module setting, not a per-object one.
 RUN wget "https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERSION}/SDL3-${SDL_VERSION}.tar.gz" -O /tmp/SDL3-${SDL_VERSION}.tar.gz && \
     tar -xzf /tmp/SDL3-${SDL_VERSION}.tar.gz -C /tmp/ && \
     rm -rf /tmp/SDL3-${SDL_VERSION}.tar.gz && \
@@ -145,7 +153,8 @@ RUN wget "https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERS
         -DBUILD_SHARED_LIBS=OFF \
         -DSDL_OPENGL=OFF \
         -DSDL_OPENGLES=ON \
-        -DSDL_VULKAN=OFF && \
+        -DSDL_VULKAN=OFF \
+        -DCMAKE_C_FLAGS="-pthread" && \
     cmake --build /tmp/SDL3-${SDL_VERSION}/build_wasm --target install --parallel $(( ($(nproc)+1)/2 )) && \
     rm -rf /tmp/SDL3-${SDL_VERSION}
 
