@@ -47,3 +47,9 @@ To run the Docker image:
 ```bash
 python3 build_run.py --run --image_tag="lts"
 ```
+
+Before starting the container, instead of doing `xhost +` command, do this:
+
+```sh
+alias start_vulkan_dev="cat $XAUTHORITY > ~/.docker_xauth && docker start vulkan-dev"
+```

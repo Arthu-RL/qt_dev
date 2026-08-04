@@ -55,7 +55,7 @@ def run(project_path: str, image: str, container_name: str) -> None:
         "DISPLAY": os.getenv("DISPLAY", ":0"),
         "XDG_RUNTIME_DIR": os.getenv("XDG_RUNTIME_DIR", ""),
         "WAYLAND_DISPLAY": os.getenv("WAYLAND_DISPLAY", "wayland-0"),
-        "XAUTHORITY": os.getenv("XAUTHORITY", os.path.expanduser("~/.Xauthority")),
+        "HOME": os.getenv("HOME", "")
     }
 
     run_command = f"""
@@ -71,7 +71,7 @@ def run(project_path: str, image: str, container_name: str) -> None:
             -v /usr/share/vulkan/icd.d/nvidia_icd.json:/usr/share/vulkan/icd.d/nvidia_icd.json:ro \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
             -v {env_vars['XDG_RUNTIME_DIR']}/{env_vars['WAYLAND_DISPLAY']}:{env_vars['XDG_RUNTIME_DIR']}/{env_vars['WAYLAND_DISPLAY']} \
-            -v {env_vars['XAUTHORITY']}:/home/developer/.Xauthority:ro \
+            -v {env_vars['HOME']}/.docker_xauth:/home/developer/.Xauthority:ro \
             --device /dev/dri:/dev/dri \
             --device /dev/snd:/dev/snd \
             -v {project_path}:/home/developer/workspace \
