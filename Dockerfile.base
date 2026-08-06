@@ -9,7 +9,7 @@ FROM ubuntu:26.04
 ###########################################
 ARG CMAKE_VERSION="4.3.3"
 ARG QT_VERSION="6.11.1"
-ARG QTCREATOR_VERSION="v20.0.0-rc1"
+ARG QTCREATOR_VERSION="v20.0.1"
 ARG FFMPEG_VERSION="n8.1.1"
 
 
