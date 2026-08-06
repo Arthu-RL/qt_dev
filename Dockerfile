@@ -228,7 +228,9 @@ RUN wget "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h" -O 
     wget "https://raw.githubusercontent.com/nothings/stb/master/stb_include.h" -O ${LOCAL_PREFIX}/include/stb_include.h && chmod 644 ${LOCAL_PREFIX}/include/stb_*
 
 # Linux, Android, and WASM
-RUN cd /tmp && git clone --branch dev "https://github.com/Arthu-RL/libink.git" && \
+ENV LIBINK_VERSION="0.2.0"
+RUN cd /tmp && wget "https://github.com/Arthu-RL/libink/archive/refs/tags/v${LIBINK_VERSION}.tar.gz" -O libink.tar.gz && \
+    mkdir -p libink && tar -xzf libink.tar.gz -C libink --strip-components=1 && rm -rf libink.tar.gz && \
     cd libink && \
     cmake --preset linux-release && cmake --build --preset linux-release --target install && \
     cmake --preset linux-debug && cmake --build --preset linux-debug --target install && \
@@ -237,7 +239,9 @@ RUN cd /tmp && git clone --branch dev "https://github.com/Arthu-RL/libink.git" &
     rm -rf /tmp/libink
 
 # Compile libwma for Linux, Android, and WASM
-RUN cd /tmp && git clone --branch dev "https://github.com/Arthu-RL/libwma.git" && \
+ENV LIBWMA_VERSION="0.1.0"
+RUN cd /tmp && wget "https://github.com/Arthu-RL/libwma/archive/refs/tags/v${LIBWMA_VERSION}.tar.gz" -O libwma.tar.gz && \
+    mkdir -p libwma && tar -xzf libwma.tar.gz -C libwma --strip-components=1 && rm -rf libwma.tar.gz && \
     cd libwma && \
     cmake --preset linux-release && cmake --build --preset linux-release --target install && \
     cmake --preset linux-debug && cmake --build --preset linux-debug --target install && \
