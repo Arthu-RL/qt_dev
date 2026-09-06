@@ -44,6 +44,19 @@ def run(project_path: str, image: str, container_name: str) -> None:
     Only nvidia graphics cards are supported, if you use AMD graphics card, 
     you wil need to change things, in docker run, and Dockerfile too probably, building new images
 
+    GPU is requested through CDI (--device nvidia.com/gpu=all), not --gpus all.
+    With the daemon on runc, --gpus all sets a device request the nvidia hook
+    never reads: the container comes up with /dev/dri but no driver userspace,
+    so Vulkan quietly falls back to Mesa and, more visibly, the NVIDIA GBM
+    backend is missing and a nested Hyprland cannot allocate a single buffer.
+    CDI reads /etc/cdi/nvidia.yaml and mounts the driver in. Regenerate that
+    spec after a driver update: sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+
+    Only the host's own Wayland socket is bind-mounted, not the whole runtime
+    dir: a nested compositor started inside the container then creates its
+    sockets in the container's own /run/user, where they cannot collide with
+    the host session's or outlive the container.
+
     Notes:
         The qtcreator volume works because of the dockerfile file config of the container HOME variable
 
@@ -68,6 +81,7 @@ def run(project_path: str, image: str, container_name: str) -> None:
             -e DISPLAY={env_vars['DISPLAY']} \
             -e XDG_RUNTIME_DIR={env_vars['XDG_RUNTIME_DIR']} \
             -e WAYLAND_DISPLAY={env_vars['WAYLAND_DISPLAY']} \
+            -e XDG_SESSION_TYPE=wayland \
             -v /usr/share/vulkan/icd.d/nvidia_icd.json:/usr/share/vulkan/icd.d/nvidia_icd.json:ro \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
             -v {env_vars['XDG_RUNTIME_DIR']}/{env_vars['WAYLAND_DISPLAY']}:{env_vars['XDG_RUNTIME_DIR']}/{env_vars['WAYLAND_DISPLAY']} \

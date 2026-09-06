@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Prints the two exports a client needs to talk to the newest nested Hyprland:
+#
+#   eval "$(hypr-env)"
+#   ./AuraBar
+#
+# Both matter. WAYLAND_DISPLAY puts the window in the nested session rather than
+# the host's, and HYPRLAND_INSTANCE_SIGNATURE is what libaurashell's discovery
+# follows to the IPC sockets.
+set -euo pipefail
+
+if ! instances=$(hyprctl instances 2>/dev/null) || [[ -z ${instances} ]]; then
+    echo "hypr-env: no Hyprland is running -- start one with hypr-nested" >&2
+    exit 1
+fi
+
+awk '
+    /^instance /  { signature = $2; sub(/:$/, "", signature) }
+    /time:/       { started = $2 }
+    /wl socket:/  { if (started >= newest) { newest = started; sig = signature; sock = $3 } }
+    END {
+        if (sig == "") exit 1
+        printf "export HYPRLAND_INSTANCE_SIGNATURE=%s\n", sig
+        printf "export WAYLAND_DISPLAY=%s\n", sock
+    }
+' <<< "${instances}"

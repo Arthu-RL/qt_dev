@@ -53,3 +53,38 @@ Before starting the container, instead of doing `xhost +` command, do this:
 ```sh
 alias start_vulkan_dev="cat $XAUTHORITY > ~/.docker_xauth && docker start vulkan-dev"
 ```
+
+---
+
+## 🖥️ Nested Hyprland
+
+The image ships Hyprland so a desktop shell (AuraShell/AuraBar) can be developed
+against a real compositor, nested inside the host's Wayland session.
+
+```sh
+docker exec -it vulkan-dev hypr-nested          # a 1600x900 Hyprland window opens
+
+docker exec -it vulkan-dev bash
+eval "$(hypr-env)"                              # points clients at the nested session
+./libaurashell/build/linux/debug/apps/AuraBar/AuraBar
+```
+
+| | |
+|---|---|
+| `hypr-nested` | starts the nested compositor; seeds `~/.config/hypr/hyprland.conf` on first run |
+| `hypr-env` | prints `HYPRLAND_INSTANCE_SIGNATURE` and `WAYLAND_DISPLAY` for the newest instance |
+| `ALT+Return` | terminal (foot) · `ALT+1..5` workspaces · `ALT+SHIFT+E` exit |
+
+The nested session's sockets stay inside the container, so it cannot collide
+with the host's own compositor.
+
+**GPU is mandatory.** `run()` requests it through CDI (`--device nvidia.com/gpu=all`);
+`--gpus all` on a runc daemon injects no driver userspace, and without the NVIDIA
+GBM backend the nested output never leaves 0x0. After a driver update:
+
+```sh
+sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+```
+
+DRM/KMS directly in the container is a different problem (seat, logind, DRM
+master) and is not what this setup targets.

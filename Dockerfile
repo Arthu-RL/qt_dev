@@ -227,32 +227,74 @@ RUN wget "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h" -O 
     wget "https://raw.githubusercontent.com/nothings/stb/master/stb_vorbis.c" -O ${LOCAL_PREFIX}/include/stb_vorbis.c && \
     wget "https://raw.githubusercontent.com/nothings/stb/master/stb_include.h" -O ${LOCAL_PREFIX}/include/stb_include.h && chmod 644 ${LOCAL_PREFIX}/include/stb_*
 
-# Linux, Android, and WASM
-ENV LIBINK_VERSION="0.2.0"
+# Linux, Android and WASM, all into ${LOCAL_PREFIX}: headers install once and
+# each library carries its ABI tag (libink_wasm32.a, ...). Release only --
+# a debug build of a dependency has no place in a distributed image.
+ENV LIBINK_VERSION="0.3.1"
 RUN cd /tmp && wget "https://github.com/Arthu-RL/libink/archive/refs/tags/v${LIBINK_VERSION}.tar.gz" -O libink.tar.gz && \
     mkdir -p libink && tar -xzf libink.tar.gz -C libink --strip-components=1 && rm -rf libink.tar.gz && \
     cd libink && \
     cmake --preset linux-release && cmake --build --preset linux-release --target install && \
-    cmake --preset linux-debug && cmake --build --preset linux-debug --target install && \
     cmake --preset android && cmake --build --preset android --target install && \
     cmake --preset wasm && cmake --build --preset wasm --target install && \
     rm -rf /tmp/libink
 
 # Compile libwma for Linux, Android, and WASM
-ENV LIBWMA_VERSION="0.1.0"
+ENV LIBWMA_VERSION="0.2.1"
 RUN cd /tmp && wget "https://github.com/Arthu-RL/libwma/archive/refs/tags/v${LIBWMA_VERSION}.tar.gz" -O libwma.tar.gz && \
     mkdir -p libwma && tar -xzf libwma.tar.gz -C libwma --strip-components=1 && rm -rf libwma.tar.gz && \
     cd libwma && \
     cmake --preset linux-release && cmake --build --preset linux-release --target install && \
-    cmake --preset linux-debug && cmake --build --preset linux-debug --target install && \
     cmake --preset android && cmake --build --preset android --target install && \
     cmake --preset wasm && cmake --build --preset wasm --target install && \
     rm -rf /tmp/libwma
 
+# Compile Aura3D for Linux, Android, and WASM
+ENV AURA3D_VERSION="0.2.0"
+RUN cd /tmp && wget "https://github.com/Aura3D-Team/Aura3D/archive/refs/tags/v${AURA3D_VERSION}.tar.gz" -O aura3d.tar.gz && \
+    mkdir -p aura3d && tar -xzf aura3d.tar.gz -C aura3d --strip-components=1 && rm -rf aura3d.tar.gz && \
+    cd aura3d && \
+    cmake --preset linux-release && cmake --build --preset linux-release --target install && \
+    cmake --preset android && cmake --build --preset android --target install && \
+    cmake --preset wasm && cmake --build --preset wasm --target install && \
+    rm -rf /tmp/aura3d
+
+############################################
+# Hyprland: the compositor AuraShell targets
+############################################
+# Runs nested inside the host's Wayland session (see scripts/hypr-nested), so a
+# shell surface can be developed against a real compositor, real layer-shell,
+# real IPC, real workspaces, without the container needing DRM master or a
+# seat of its own. hyprland-protocols installs its XML under a pkg-config
+# pkgdatadir, the same way wayland-protocols does, so a client can generate
+# bindings for focus-grab and friends when it needs them.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    hyprland hyprland-protocols \
+    # Xwayland so X11 clients (and libwma's X11 backend) run inside the session
+    xwayland \
+    # A terminal, or the nested session has no way to launch anything by hand
+    foot \
+    # Portals: screenshare, file pickers, and what a shell's own UI will need
+    xdg-desktop-portal xdg-desktop-portal-hyprland \
+    # Diagnosis: wayland-info answers "is this protocol even advertised"
+    wayland-utils wl-clipboard \
+    seatd dbus-x11 \
+    fonts-dejavu-core && \
+    apt-get clean && apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY ./scripts/hypr-nested ./scripts/hypr-env /usr/local/bin/
+COPY ./scripts/hyprland-nested.conf /usr/share/aurashell/hyprland-nested.conf
+RUN chmod +x /usr/local/bin/hypr-nested /usr/local/bin/hypr-env
+
 ############################################
 # Verification
 ############################################
-RUN sdkmanager --version && adb version && gradle --version
+# Hyprland aborts on a missing XDG_RUNTIME_DIR before it ever prints a version,
+# and a build has no runtime dir -- /tmp is enough to get past the check.
+RUN sdkmanager --version && adb version && gradle --version && \
+    XDG_RUNTIME_DIR=/tmp Hyprland --version
 
 ############################################
 # Monitor Execution Target

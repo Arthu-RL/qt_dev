@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# A nested Hyprland on the host's Wayland session: a real compositor to develop
+# AuraShell against, with none of the risk of breaking the session you are
+# working in. Clients attach to it through hypr-env.
+set -euo pipefail
+
+: "${XDG_RUNTIME_DIR:?hypr-nested: XDG_RUNTIME_DIR is unset -- run the container with the host runtime dir mounted}"
+: "${WAYLAND_DISPLAY:?hypr-nested: WAYLAND_DISPLAY is unset -- there is no host compositor to nest inside}"
+
+if [[ ! -S "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}" ]]; then
+    echo "hypr-nested: no socket at ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}" >&2
+    exit 1
+fi
+
+config="${HOME}/.config/hypr/hyprland.conf"
+if [[ ! -f ${config} ]]; then
+    install -Dm644 /usr/share/aurashell/hyprland-nested.conf "${config}"
+    echo "hypr-nested: seeded ${config}"
+fi
+
+# The container toolkit links the NVIDIA GBM backend in at create time, and any
+# later apt run that touches this directory drops the link -- after which every
+# buffer allocation fails and the nested output stays 0x0. Cheap to re-assert.
+gbm_backend=/usr/lib/x86_64-linux-gnu/gbm/nvidia-drm_gbm.so
+if [[ ! -e ${gbm_backend} && -e /usr/lib/libnvidia-allocator.so.1 ]]; then
+    ln -sf /usr/lib/libnvidia-allocator.so.1 "${gbm_backend}"
+fi
+
+args=()
+if [[ ${EUID} -eq 0 ]]; then
+    # Hyprland's root check guards against a compositor holding a real seat.
+    # This one is nested in a container and owns no seat, no DRM master and no
+    # input device: there is nothing for it to take hostage.
+    args+=(--i-am-really-stupid)
+fi
+
+echo "hypr-nested: starting; attach clients with:  eval \"\$(hypr-env)\""
+exec Hyprland "${args[@]}" "$@"
